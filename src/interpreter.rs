@@ -16,11 +16,12 @@ impl Interpreter {
     pub fn next(&mut self, kind: token::Kind) -> Option<token::Token> {
         let current = self.tokenizer.next();
         if let Some(token) = current {
+            if token.kind != kind {
+                panic!("Sintax error")
+            }
             self.current = Some(token);
-            self.current.clone()
-        } else {
-            panic!("Sintax error")
         }
+        self.current.clone()
     }
 
     pub fn expr(&mut self) -> String {
