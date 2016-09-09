@@ -2,6 +2,7 @@
 pub enum Kind {
     Integer,
     Operator,
+    Space,
     EOF
 }
 
@@ -14,6 +15,24 @@ pub struct Token {
 impl Token {
     pub fn as_integer(self) -> i32 {
         self.value.parse::<i32>().unwrap()
+    }
+
+    pub fn build(kind: Kind, value: String) -> Token {
+        Token {
+            kind: kind,
+            value: value
+        }
+    }
+
+    pub fn classify(character: &Option<char>) -> Kind {
+        match *character {
+            Some(value) => {
+                if is_operator(value) { return Kind::Operator }
+                if value == ' ' { return Kind::Space }
+                Kind::Integer
+            },
+            None => Kind::EOF
+        }
     }
 }
 
@@ -37,7 +56,34 @@ impl Iterator for Tokenizer {
 
     fn next(&mut self) -> Option<Token> {
         let current = self.text.chars().nth(self.position);
+        let kind = Token::classify(&current);
+
         self.position += 1;
+        match kind {
+            Kind::EOF => Some(Token::build(kind, String::new())),
+            Kind::Space => self.next(),
+            _ => {
+                let mut value = vec![current.unwrap()];
+                let mut next = self.text.chars().nth(self.position);
+                let mut kindnext = Token::classify(&next);
+
+                while kindnext == kind {
+                    value.push(next.unwrap());
+                    self.position += 1;
+
+                    next = self.text.chars().nth(self.position);
+                    kindnext = Token::classify(&next);
+                }
+
+                Some(Token::build(kind, value.into_iter().collect()))
+            }
+        }
+    }
+}
+
+impl Tokenizer {
+    pub fn preview(&mut self) -> Option<Token> {
+        let current = self.text.chars().nth(self.position+1);
 
         if let Some(val) = current {
             if val == ' ' { return None }
@@ -81,6 +127,41 @@ fn it_generate_tokens() {
     let mut tokens = Tokenizer::new(String::from(text));
 
     assert_eq!(
+        tokens.next(),
+        Some(Token {
+            kind: Kind::Integer,
+            value: String::from("5")
+        })
+    );
+    assert_eq!(
+        tokens.next(),
+        Some(Token {
+            kind: Kind::Operator,
+            value: String::from("+")
+        })
+    );
+    assert_eq!(
+        tokens.next(),
+        Some(Token {
+            kind: Kind::Integer,
+            value: String::from("1")
+        })
+    );
+    assert_eq!(
+        tokens.next().unwrap(),
+        Token {
+            kind: Kind::EOF,
+            value: String::new()
+        }
+    );
+}
+
+#[test]
+fn it_ignores_empty_spaces() {
+    let text = "5 + 1";
+    let mut tokens = Tokenizer::new(String::from(text));
+
+    assert_eq!(
         tokens.next().unwrap(),
         Token {
             kind: Kind::Integer,
@@ -111,18 +192,17 @@ fn it_generate_tokens() {
 }
 
 #[test]
-fn it_ignores_empty_spaces() {
-    let text = "5 + 1";
+fn it_acepts_high_numbers() {
+    let text = "21+1102";
     let mut tokens = Tokenizer::new(String::from(text));
 
     assert_eq!(
         tokens.next().unwrap(),
         Token {
             kind: Kind::Integer,
-            value: String::from("5")
+            value: String::from("21")
         }
     );
-    assert_eq!(tokens.next(), None);
     assert_eq!(
         tokens.next().unwrap(),
         Token {
@@ -130,12 +210,11 @@ fn it_ignores_empty_spaces() {
             value: String::from("+")
         }
     );
-    assert_eq!(tokens.next(), None);
     assert_eq!(
         tokens.next().unwrap(),
         Token {
             kind: Kind::Integer,
-            value: String::from("1")
+            value: String::from("1102")
         }
     );
     assert_eq!(

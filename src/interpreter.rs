@@ -14,12 +14,13 @@ impl Interpreter {
     }
 
     pub fn next(&mut self, kind: token::Kind) -> Option<token::Token> {
-        let current = self.tokenizer.next();
-        if let Some(token) = current {
+        if let Some(token) = self.tokenizer.next() {
+            println!("current {:?}", token);
             if token.kind != kind {
                 panic!("Sintax error")
             }
-            self.current = Some(token);
+
+            self.current = Some(token.clone());
         }
         self.current.clone()
     }
