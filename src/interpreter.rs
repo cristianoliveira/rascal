@@ -15,9 +15,11 @@ impl Interpreter {
 
     pub fn next(&mut self, kind: token::Kind) -> Option<token::Token> {
         if let Some(token) = self.tokenizer.next() {
-            println!("current {:?}", token);
             if token.kind != kind {
-                panic!("Sintax error")
+                panic!("Sintax error unexpected token {:?} at position {}",
+                       token,
+                       self.tokenizer.position
+                       )
             }
 
             self.current = Some(token.clone());
@@ -26,22 +28,42 @@ impl Interpreter {
     }
 
     pub fn expr(&mut self) -> String {
-        let left = self.next(token::Kind::Integer);
-        let op = self.next(token::Kind::Operator);
-        let right = self.next(token::Kind::Integer);
+        let mut operation_stack:Vec<token::Token> = vec![];
 
-        format!("{}", calc(left.unwrap(), op.unwrap(), right.unwrap()))
+        while let Some(token) = self.tokenizer.next() {
+            println!("{:?}", token);
+            match token {
+                token::Token{ kind: token::Kind::Integer, .. } =>
+                    operation_stack.push(token),
+                token::Token{ kind: token::Kind::Operator, .. } => {
+                    let left = operation_stack.pop().unwrap();
+                    let op = token;
+
+                    if let Some(right) = self.next(token::Kind::Integer) {
+                        let mut result = right.clone();
+
+                        let res = eval_binary_operation(left.as_integer(),
+                                                        op.value,
+                                                        right.as_integer());
+                        result.value = res.to_string();
+                        operation_stack.push(result);
+                    }
+                },
+                _ => break
+            }
+        }
+
+        format!("{}", operation_stack.pop().unwrap().value)
     }
 }
 
-fn calc(first: token::Token, operator: token::Token, second: token::Token) -> i32 {
-    println!("{:?}", operator);
-    match &*operator.value {
-        "+" => first.as_integer() + second.as_integer(),
-        "-" => first.as_integer() - second.as_integer(),
-        "*" => first.as_integer() * second.as_integer(),
-        "/" => first.as_integer() / second.as_integer(),
-        _ => panic!("Sintax error")
+fn eval_binary_operation(first: i32, operator: String, second: i32) -> i32 {
+    match &*operator {
+        "+" => first + second,
+        "-" => first - second,
+        "*" => first * second,
+        "/" => first / second,
+        _ => panic!("Sintax error: invalid operator {}", operator)
     }
 }
 
@@ -79,4 +101,13 @@ fn it_divide() {
     let mut interpreter = Interpreter::new(tokenizer);
 
     assert_eq!("2", interpreter.expr());
+}
+
+#[test]
+fn it_accepts_multiples_operation() {
+    let text = "10+5-4-1";
+    let tokenizer = token::Tokenizer::new(String::from(text));
+    let mut interpreter = Interpreter::new(tokenizer);
+
+    assert_eq!("10", interpreter.expr());
 }

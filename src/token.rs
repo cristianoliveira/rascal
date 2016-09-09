@@ -18,10 +18,7 @@ impl Token {
     }
 
     pub fn build(kind: Kind, value: String) -> Token {
-        Token {
-            kind: kind,
-            value: value
-        }
+        Token { kind: kind, value: value }
     }
 
     pub fn classify(character: &Option<char>) -> Kind {
@@ -60,7 +57,7 @@ impl Iterator for Tokenizer {
 
         self.position += 1;
         match kind {
-            Kind::EOF => Some(Token::build(kind, String::new())),
+            Kind::EOF => None,
             Kind::Space => self.next(),
             _ => {
                 let mut value = vec![current.unwrap()];
@@ -148,11 +145,8 @@ fn it_generate_tokens() {
         })
     );
     assert_eq!(
-        tokens.next().unwrap(),
-        Token {
-            kind: Kind::EOF,
-            value: String::new()
-        }
+        tokens.next(),
+        None
     );
 }
 
@@ -182,13 +176,6 @@ fn it_ignores_empty_spaces() {
             value: String::from("1")
         }
     );
-    assert_eq!(
-        tokens.next().unwrap(),
-        Token {
-            kind: Kind::EOF,
-            value: String::new()
-        }
-    );
 }
 
 #[test]
@@ -215,13 +202,6 @@ fn it_acepts_high_numbers() {
         Token {
             kind: Kind::Integer,
             value: String::from("1102")
-        }
-    );
-    assert_eq!(
-        tokens.next().unwrap(),
-        Token {
-            kind: Kind::EOF,
-            value: String::new()
         }
     );
 }
