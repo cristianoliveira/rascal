@@ -5,11 +5,15 @@ use std::io::{self,BufRead};
 
 fn main() {
     let stdin = io::stdin();
-    let line : String = stdin.lock().lines().next().unwrap().unwrap();
     //
-    let tokenizer = token::Tokenizer::new(line);
-    let mut iterpreter = interpreter::Interpreter::new(tokenizer);
-    println!("result {}", iterpreter.expr())
+    while let Some(line) = stdin.lock().lines().next() {
+        println!("{:?}", line);
+        if let Ok(expr) = line {
+            let tokenizer = token::Tokenizer::new(expr);
+            let mut iterpreter = interpreter::Interpreter::new(tokenizer);
+            println!("result {}", iterpreter.expr())
+        }
+    }
 }
 
 
