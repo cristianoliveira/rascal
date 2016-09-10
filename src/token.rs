@@ -6,6 +6,19 @@ pub enum Kind {
     EOF
 }
 
+impl Kind {
+    pub fn classify(character: &Option<char>) -> Kind {
+        match *character {
+            Some(value) => {
+                if is_operator(value) { return Kind::Operator }
+                if value == ' ' { return Kind::Space }
+                Kind::Integer
+            },
+            None => Kind::EOF
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct Token {
     pub kind: Kind,
@@ -19,17 +32,6 @@ impl Token {
 
     pub fn build(kind: Kind, value: String) -> Token {
         Token { kind: kind, value: value }
-    }
-
-    pub fn classify(character: &Option<char>) -> Kind {
-        match *character {
-            Some(value) => {
-                if is_operator(value) { return Kind::Operator }
-                if value == ' ' { return Kind::Space }
-                Kind::Integer
-            },
-            None => Kind::EOF
-        }
     }
 }
 
@@ -53,7 +55,7 @@ impl Iterator for Tokenizer {
 
     fn next(&mut self) -> Option<Token> {
         let current = self.text.chars().nth(self.position);
-        let kind = Token::classify(&current);
+        let kind = Kind::classify(&current);
 
         self.position += 1;
         match kind {
@@ -62,14 +64,14 @@ impl Iterator for Tokenizer {
             _ => {
                 let mut value = vec![current.unwrap()];
                 let mut next = self.text.chars().nth(self.position);
-                let mut kindnext = Token::classify(&next);
+                let mut kindnext = Kind::classify(&next);
 
                 while kindnext == kind {
                     value.push(next.unwrap());
                     self.position += 1;
 
                     next = self.text.chars().nth(self.position);
-                    kindnext = Token::classify(&next);
+                    kindnext = Kind::classify(&next);
                 }
 
                 Some(Token::build(kind, value.into_iter().collect()))
@@ -184,24 +186,24 @@ fn it_acepts_high_numbers() {
     let mut tokens = Tokenizer::new(String::from(text));
 
     assert_eq!(
-        tokens.next().unwrap(),
-        Token {
+        tokens.next(),
+        Some(Token {
             kind: Kind::Integer,
             value: String::from("21")
-        }
+        })
     );
     assert_eq!(
-        tokens.next().unwrap(),
-        Token {
+        tokens.next(),
+        Some(Token {
             kind: Kind::Operator,
             value: String::from("+")
-        }
+        })
     );
     assert_eq!(
-        tokens.next().unwrap(),
-        Token {
+        tokens.next(),
+        Some(Token {
             kind: Kind::Integer,
             value: String::from("1102")
-        }
+        })
     );
 }

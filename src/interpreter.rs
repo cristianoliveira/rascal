@@ -14,6 +14,7 @@ impl Interpreter {
     }
 
     pub fn next(&mut self, kind: token::Kind) -> Option<token::Token> {
+        if self.current.is_some() { return self.current.clone() }
         if let Some(token) = self.tokenizer.next() {
             if token.kind != kind {
                 panic!("Sintax error unexpected token {:?} at position {}",
@@ -23,41 +24,66 @@ impl Interpreter {
             }
 
             self.current = Some(token.clone());
+            self.current.clone()
+        } else {
+            None
         }
-        self.current.clone()
+    }
+
+    pub fn consume_next(&mut self, kind: token::Kind) -> Option<token::Token> {
+        if self.current.is_some() {
+            let curr = self.current.clone();
+            self.current = None;
+            curr
+        } else {
+            let next = self.next(kind);
+            self.current = None;
+            next.clone()
+        }
+    }
+
+    fn term(&mut self) -> token::Token {
+        let mut result = self.consume_next(token::Kind::Integer).unwrap();
+
+        if let Some(operator) = self.next(token::Kind::Operator) {
+            result = match operator.value.as_ref() {
+                "*" | "/" => {
+                    self.consume_next(token::Kind::Operator);
+                    if let Some(right) = self.consume_next(token::Kind::Integer) {
+                        result.value = binary_operation(
+                            result.clone().as_integer(),
+                            operator.value,
+                            right.as_integer()
+                        ).to_string()
+                    }
+                    result
+                },
+                _ => result
+            };
+        }
+        return result;
     }
 
     pub fn expr(&mut self) -> String {
-        let mut operation_stack:Vec<token::Token> = vec![];
+        let mut result = self.term();
+        while let Some(operator) = self.next(token::Kind::Operator) {
+            self.consume_next(token::Kind::Operator);
+            let right = self.term();
 
-        while let Some(token) = self.tokenizer.next() {
-            println!("{:?}", token);
-            match token {
-                token::Token{ kind: token::Kind::Integer, .. } =>
-                    operation_stack.push(token),
-                token::Token{ kind: token::Kind::Operator, .. } => {
-                    let left = operation_stack.pop().unwrap();
-                    let op = token;
+            let operation_result = match &*operator.value {
+                "+" => result.clone().as_integer() + right.as_integer(),
+                "-" => result.clone().as_integer() - right.as_integer(),
+                _ => result.clone().as_integer()
+            };
 
-                    if let Some(right) = self.next(token::Kind::Integer) {
-                        let mut result = right.clone();
-
-                        let res = eval_binary_operation(left.as_integer(),
-                                                        op.value,
-                                                        right.as_integer());
-                        result.value = res.to_string();
-                        operation_stack.push(result);
-                    }
-                },
-                _ => break
-            }
+            result.value = operation_result.to_string();
         }
 
-        format!("{}", operation_stack.pop().unwrap().value)
+        format!("{}", result.value)
     }
 }
 
-fn eval_binary_operation(first: i32, operator: String, second: i32) -> i32 {
+fn binary_operation(first: i32, operator: String, second: i32) -> i32 {
     match &*operator {
         "+" => first + second,
         "-" => first - second,
@@ -110,4 +136,13 @@ fn it_accepts_multiples_operation() {
     let mut interpreter = Interpreter::new(tokenizer);
 
     assert_eq!("10", interpreter.expr());
+}
+
+#[test]
+fn it_respect_precedence() {
+    let text = "1+1*2";
+    let tokenizer = token::Tokenizer::new(String::from(text));
+    let mut interpreter = Interpreter::new(tokenizer);
+
+    assert_eq!("3", interpreter.expr());
 }
