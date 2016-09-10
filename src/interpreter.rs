@@ -13,46 +13,39 @@ impl Interpreter {
         }
     }
 
-    pub fn next(&mut self) -> Option<token::Token> {
-        if self.current.is_some() { return self.current.clone() }
-        self.current = self.tokenizer.next();
+    pub fn next(&mut self) -> &mut Self {
+        if self.current.is_none() { self.current = self.tokenizer.next() }
+        self
+    }
+
+    pub fn get(&mut self) -> Option<token::Token> {
         self.current.clone()
     }
 
-    pub fn consume_next(&mut self, expected_kind: token::Kind) -> Option<token::Token> {
-        let token = match self.current {
-            Some(_) => {
-                let curr = self.current.clone();
-                self.current = None;
-                curr
-            },
-            None => {
-                let next = self.next();
-                self.current = None;
-                next.clone()
+    pub fn consume(&mut self, expected_kind: token::Kind) -> Option<token::Token> {
+        let mut cosumed = self.current.clone();
+        if let Some(token) = self.current.clone() {
+            self.current = None;
+            if token.kind != expected_kind {
+                panic!(
+                    "Sintax error: expected token kind {:?} found {:?} at position {}",
+                    expected_kind,
+                    token,
+                    self.tokenizer.position
+                    )
             }
-        };
-
-        if token.clone().unwrap().kind == expected_kind {
-            return token;
-        } else {
-            panic!(
-                "Sintax error: expected token kind {:?} found {:?} at position {}",
-                expected_kind,
-                token,
-                self.tokenizer.position
-                )
         }
+        return cosumed;
     }
 
     fn factor(&mut self) -> token::Token {
-        match self.next() {
+        match self.next().get() {
             Some(token::Token{ kind: token::Kind::GroupStart , .. }) => {
-                self.consume_next(token::Kind::GroupStart);
+                self.consume(token::Kind::GroupStart);
                 return token::Token::build(token::Kind::Integer, self.expr());
             },
             Some(token::Token{ kind: token::Kind::Integer, .. }) => {
-                return self.consume_next(token::Kind::Integer).unwrap();
+                return self.next().consume(token::Kind::Integer).unwrap();
             },
             _ => panic!("Error factor")
         }
@@ -61,10 +54,10 @@ impl Interpreter {
     fn term(&mut self) -> token::Token {
         let mut result = self.factor();
 
-        if let Some(operator) = self.next() {
+        if let Some(operator) = self.next().get() {
             result.value = match operator.value.as_ref() {
                 "*" | "/" => {
-                    self.consume_next(token::Kind::Operator);
+                    self.consume(token::Kind::Operator);
                     let right = self.factor();
                     binary_operation(
                         &result,
@@ -80,12 +73,12 @@ impl Interpreter {
 
     pub fn expr(&mut self) -> String {
         let mut result = self.term();
-        while let Some(operator) = self.next() {
+        while let Some(operator) = self.next().get() {
             if operator.kind == token::Kind::GroupEnd {
-                self.consume_next(token::Kind::GroupEnd);
+                self.consume(token::Kind::GroupEnd);
                 break;
             }
-            self.consume_next(token::Kind::Operator);
+            self.consume(token::Kind::Operator);
             let right = self.term();
 
             let operation_result = match operator.value.as_ref() {
