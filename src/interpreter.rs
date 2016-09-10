@@ -40,8 +40,8 @@ impl Interpreter {
 
     fn factor(&mut self) -> token::Token {
         match self.next().get() {
-            Some(token::Token{ kind: token::Kind::GroupStart , .. }) => {
-                self.consume(token::Kind::GroupStart);
+            Some(token::Token{ kind: token::Kind::BlockBegin , .. }) => {
+                self.consume(token::Kind::BlockBegin);
                 return token::Token::build(token::Kind::Integer, self.expr());
             },
             Some(token::Token{ kind: token::Kind::Integer, .. }) => {
@@ -74,8 +74,8 @@ impl Interpreter {
     pub fn expr(&mut self) -> String {
         let mut result = self.term();
         while let Some(operator) = self.next().get() {
-            if operator.kind == token::Kind::GroupEnd {
-                self.consume(token::Kind::GroupEnd);
+            if operator.kind == token::Kind::BlockEnd {
+                self.consume(token::Kind::BlockEnd);
                 break;
             }
             self.consume(token::Kind::Operator);

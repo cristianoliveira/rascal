@@ -2,8 +2,8 @@
 pub enum Kind {
     Integer,
     Operator,
-    GroupStart,
-    GroupEnd,
+    BlockBegin,
+    BlockEnd,
     Space,
     EOF
 }
@@ -13,8 +13,8 @@ impl Kind {
         match *character {
             Some(value) => {
                 match value {
-                    '(' => Kind::GroupStart,
-                    ')' => Kind::GroupEnd,
+                    '(' => Kind::BlockBegin,
+                    ')' => Kind::BlockEnd,
                     ' ' => Kind::Space,
                     '0'|'1'|'2'|'3'|'4'|
                     '5'|'6'|'7'|'8'|'9' => Kind::Integer,
@@ -197,7 +197,7 @@ fn it_acepts_grouped_expressions() {
     assert_eq!(
         tokens.next(),
         Some(Token {
-            kind: Kind::GroupStart,
+            kind: Kind::BlockBegin,
             value: String::from("(")
         })
     );
@@ -211,7 +211,7 @@ fn it_acepts_grouped_expressions() {
     assert_eq!(
         tokens.next(),
         Some(Token {
-            kind: Kind::GroupEnd,
+            kind: Kind::BlockEnd,
             value: String::from(")")
         })
     );
