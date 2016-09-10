@@ -188,3 +188,31 @@ fn it_acepts_high_numbers() {
         })
     );
 }
+
+#[test]
+fn it_acepts_grouped_expressions() {
+    let text = "(1)*1";
+    let mut tokens = Tokenizer::new(String::from(text));
+
+    assert_eq!(
+        tokens.next(),
+        Some(Token {
+            kind: Kind::GroupStart,
+            value: String::from("(")
+        })
+    );
+    assert_eq!(
+        tokens.next(),
+        Some(Token {
+            kind: Kind::Integer,
+            value: String::from("1")
+        })
+    );
+    assert_eq!(
+        tokens.next(),
+        Some(Token {
+            kind: Kind::GroupEnd,
+            value: String::from(")")
+        })
+    );
+}

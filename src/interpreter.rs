@@ -13,14 +13,10 @@ impl Interpreter {
         }
     }
 
-    pub fn next(&mut self, expected_kind: token::Kind) -> Option<token::Token> {
+    pub fn next(&mut self) -> Option<token::Token> {
         if self.current.is_some() { return self.current.clone() }
-        if let Some(token) = self.tokenizer.next() {
-            self.current = Some(token.clone());
-            self.current.clone()
-        } else {
-            None
-        }
+        self.current = self.tokenizer.next();
+        self.current.clone()
     }
 
     pub fn consume_next(&mut self, expected_kind: token::Kind) -> Option<token::Token> {
@@ -31,7 +27,7 @@ impl Interpreter {
                 curr
             },
             None => {
-                let next = self.next(expected_kind.clone());
+                let next = self.next();
                 self.current = None;
                 next.clone()
             }
@@ -49,20 +45,34 @@ impl Interpreter {
         }
     }
 
-    fn term(&mut self) -> token::Token {
-        let mut result = self.consume_next(token::Kind::Integer).unwrap();
+    fn factor(&mut self) -> token::Token {
+        match self.next() {
+            Some(token::Token{ kind: token::Kind::GroupStart , .. }) => {
+                self.consume_next(token::Kind::GroupStart);
+                return token::Token::build(token::Kind::Integer, self.expr());
+            },
+            Some(token::Token{ kind: token::Kind::Integer, .. }) => {
+                return self.consume_next(token::Kind::Integer).unwrap();
+            },
+            _ => panic!("Error factor")
+        }
+    }
 
-        if let Some(operator) = self.next(token::Kind::Operator) {
-            result = match operator.value.as_ref() {
+    fn term(&mut self) -> token::Token {
+        let mut result = self.factor();
+
+        if let Some(operator) = self.next() {
+            result.value = match operator.value.as_ref() {
                 "*" | "/" => {
                     self.consume_next(token::Kind::Operator);
-                    if let Some(right) = self.consume_next(token::Kind::Integer) {
-                        result.value = 
-                            binary_operation(&result, &operator, &right).to_string()
-                    }
-                    result
+                    let right = self.factor();
+                    binary_operation(
+                        &result,
+                        &operator,
+                        &right
+                    ).to_string()
                 },
-                _ => result
+                _ => result.clone().value
             };
         }
         return result;
@@ -70,7 +80,11 @@ impl Interpreter {
 
     pub fn expr(&mut self) -> String {
         let mut result = self.term();
-        while let Some(operator) = self.next(token::Kind::Operator) {
+        while let Some(operator) = self.next() {
+            if operator.kind == token::Kind::GroupEnd {
+                self.consume_next(token::Kind::GroupEnd);
+                break;
+            }
             self.consume_next(token::Kind::Operator);
             let right = self.term();
 
@@ -157,4 +171,13 @@ fn it_respect_precedence() {
     let mut interpreter = Interpreter::new(tokenizer);
 
     assert_eq!("3", interpreter.expr());
+}
+
+#[test]
+fn it_respects_grouped_expression() {
+    let text = "(1+(1+1)*2)+1";
+    let tokenizer = token::Tokenizer::new(String::from(text));
+    let mut interpreter = Interpreter::new(tokenizer);
+
+    assert_eq!("6", interpreter.expr());
 }
