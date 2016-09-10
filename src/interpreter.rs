@@ -71,8 +71,11 @@ impl Interpreter {
             let right = self.term();
 
             let operation_result = match &*operator.value {
-                "+" => result.clone().as_integer() + right.as_integer(),
-                "-" => result.clone().as_integer() - right.as_integer(),
+                "+" | "-" => binary_operation(
+                                result.clone().as_integer(),
+                                operator.value,
+                                right.as_integer()
+                            ),
                 _ => result.clone().as_integer()
             };
 

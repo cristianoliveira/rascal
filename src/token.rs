@@ -2,6 +2,8 @@
 pub enum Kind {
     Integer,
     Operator,
+    GroupStart,
+    GroupEnd,
     Space,
     EOF
 }
@@ -10,9 +12,15 @@ impl Kind {
     pub fn classify(character: &Option<char>) -> Kind {
         match *character {
             Some(value) => {
-                if is_operator(value) { return Kind::Operator }
-                if value == ' ' { return Kind::Space }
-                Kind::Integer
+                match value {
+                    '(' => Kind::GroupStart,
+                    ')' => Kind::GroupEnd,
+                    ' ' => Kind::Space,
+                    '0'|'1'|'2'|'3'|'4'|
+                    '5'|'6'|'7'|'8'|'9' => Kind::Integer,
+                    '+'|'-'|'*'|'/'|'^' => Kind::Operator,
+                    _ => panic!("Character not supported {}", value)
+                }
             },
             None => Kind::EOF
         }
@@ -76,33 +84,6 @@ impl Iterator for Tokenizer {
 
                 Some(Token::build(kind, value.into_iter().collect()))
             }
-        }
-    }
-}
-
-impl Tokenizer {
-    pub fn preview(&mut self) -> Option<Token> {
-        let current = self.text.chars().nth(self.position+1);
-
-        if let Some(val) = current {
-            if val == ' ' { return None }
-
-            if is_operator(val) {
-                return Some(Token {
-                    kind: Kind::Operator,
-                    value: as_string(val)
-                })
-            } else {
-                return Some(Token {
-                    kind: Kind::Integer,
-                    value: as_string(val)
-                })
-            }
-        } else {
-            return Some(Token {
-                kind: Kind::EOF,
-                value: String::new()
-            })
         }
     }
 }
