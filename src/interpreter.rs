@@ -36,8 +36,7 @@ impl Interpreter {
     // consume
     //
     // It is responsible for consume the current Token
-    fn consume(&mut self, expected_kind: token::Kind) -> Option<token::Token> {
-        let mut cosumed = self.current.clone();
+    fn consume(&mut self, expected_kind: token::Kind) -> token::Token {
         if let Some(token) = self.current.clone() {
             self.current = None;
             if token.kind != expected_kind {
@@ -48,8 +47,10 @@ impl Interpreter {
                     self.tokenizer.position
                     )
             }
+            return token;
+        } else {
+            panic!("Interpreter error: unexpected end of file");
         }
-        return cosumed;
     }
 
     // factor
@@ -64,10 +65,12 @@ impl Interpreter {
         match self.next().get() {
             Some(token::Token{ kind: token::Kind::BlockBegin , .. }) => {
                 self.consume(token::Kind::BlockBegin);
-                return token::Token::build(token::Kind::Integer, self.expr());
+                let result = self.expr();
+                self.consume(token::Kind::BlockEnd);
+                token::Token::build(token::Kind::Integer, result)
             },
             Some(token::Token{ kind: token::Kind::Integer, .. }) => {
-                return self.next().consume(token::Kind::Integer).unwrap();
+                return self.next().consume(token::Kind::Integer);
             },
             _ => panic!("Error factor")
         }
@@ -84,10 +87,10 @@ impl Interpreter {
     fn term(&mut self) -> token::Token {
         let mut result = self.factor();
 
-        if let Some(operator) = self.next().get() {
-            result.value = match operator.value.as_ref() {
+        if let Some(token) = self.next().get() {
+            result.value = match token.value.as_ref() {
                 "*" | "/" => {
-                    self.consume(token::Kind::Operator);
+                    let operator = self.consume(token::Kind::Operator);
                     let right = self.factor();
                     binary_operation(
                         &result,
@@ -111,17 +114,15 @@ impl Interpreter {
     // ```
     pub fn expr(&mut self) -> String {
         let mut result = self.term();
-        while let Some(operator) = self.next().get() {
-            if operator.kind == token::Kind::BlockEnd {
-                self.consume(token::Kind::BlockEnd);
-                break;
-            }
-            self.consume(token::Kind::Operator);
-            let right = self.term();
-
-            let operation_result = match operator.value.as_ref() {
-                "+" | "-" => binary_operation(&result, &operator, &right),
-                _ => result.clone().as_integer()
+        while let Some(token) = self.next().get() {
+            if token.kind == token::Kind::EOF { break }
+            let operation_result = match token.value.as_ref() {
+                "+" | "-" => {
+                    let operator = self.consume(token::Kind::Operator);
+                    let right = self.term();
+                    binary_operation(&result, &operator, &right)
+                },
+                _ => break
             };
 
             result.value = operation_result.to_string();
