@@ -21,7 +21,7 @@ impl Interpreter {
     //
     // It store the next token from Tokenizer and return itself for
     // chaining porpouses
-    pub fn next(&mut self) -> &mut Self {
+    fn next(&mut self) -> &mut Self {
         if self.current.is_none() { self.current = self.tokenizer.next() }
         self
     }
@@ -29,14 +29,14 @@ impl Interpreter {
     // get
     //
     // It gets the current token without consuming it
-    pub fn get(&mut self) -> Option<token::Token> {
+    fn get(&mut self) -> Option<token::Token> {
         self.current.clone()
     }
 
     // consume
     //
     // It is responsible for consume the current Token
-    pub fn consume(&mut self, expected_kind: token::Kind) -> Option<token::Token> {
+    fn consume(&mut self, expected_kind: token::Kind) -> Option<token::Token> {
         let mut cosumed = self.current.clone();
         if let Some(token) = self.current.clone() {
             self.current = None;

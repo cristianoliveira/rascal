@@ -98,19 +98,6 @@ impl Iterator for Tokenizer {
     }
 }
 
-fn as_string(ch: char) -> String {
-    let mut char_as_string = String::new();
-    char_as_string.push(ch);
-    char_as_string
-}
-
-fn is_operator(value: char) -> bool {
-    value == '+' ||
-        value == '-' ||
-        value == '*' ||
-        value == '/'
-}
-
 #[test]
 fn it_generate_tokens() {
     let text = "5+1";
