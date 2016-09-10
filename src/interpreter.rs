@@ -175,9 +175,9 @@ fn it_respect_precedence() {
 
 #[test]
 fn it_respects_grouped_expression() {
-    let text = "(1+(1+1)*2)+1";
+    let text = "4+(1+(1+1)*2)+1";
     let tokenizer = token::Tokenizer::new(String::from(text));
     let mut interpreter = Interpreter::new(tokenizer);
 
-    assert_eq!("6", interpreter.expr());
+    assert_eq!("10", interpreter.expr());
 }
