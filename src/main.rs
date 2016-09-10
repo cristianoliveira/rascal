@@ -1,5 +1,6 @@
 mod token;
 mod interpreter;
+mod ast;
 
 use std::io::{self,BufRead};
 

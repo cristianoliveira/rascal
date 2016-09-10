@@ -1,65 +1,67 @@
 // This module contains the Abstract Sintax Tree representations
 
-use token::{Token, binary_operation}
+use token::{Token, Kind};
 
-trait Node {
-    fn value(self) -> Token;
-    fn is_leaf(self) -> bool;
-};
-
-struct BinaryOperation{
-    pub left: Option<Node>;
-    pub token: Token;
-    pub right: Option<Node>;
+#[derive(Debug, Clone, PartialEq)]
+pub struct Node{
+    pub token: Token,
+    left: Box<Option<Node>>,
+    right: Box<Option<Node>>
 }
 
-impl BinaryOperation {
-    pub fn new(left: Option<Node>, token: Token, right: Option<Node>)
-}
-
-impl Node for BinaryOperation {
-    fn value(self) -> Token {
-        if let Some(lnode) = self.left {
-            let mut lresult = lnode.value()
-            if let Some(rnode) = self.right {
-                let lresult = rnode.value()
-                lresult.value = token::binary_operation(&lresult.clone(),
-                                                        &self.value,
-                                                        &rresult)
-            };
-            return lresult;
-        } else {
-            panic!("AST error: invalid binary operation node")
+impl Node {
+    pub fn new(left: Option<Node>, token: Token, right: Option<Node>) -> Self {
+        Node {
+            left: Box::new(left),
+            token: token,
+            right: Box::new(right)
         }
     }
-    fn is_leaf(self) -> bool {
-        self.left.is_none && self.right.is_none()
+    pub fn leaf(token: Token) -> Self {
+        Node {
+            left: Box::new(None),
+            token: token,
+            right: Box::new(None)
+        }
     }
-}
-
-struct Number{
-    pub token: Token;
-}
-impl Node for Number {
-    fn value(self) -> Token {
-        self.token
-    }
-    fn is_leaf(self) -> bool {
-        true
+    pub fn nodes(self) -> (Option<Node>, Option<Node>) {
+        (*self.left, *self.right)
     }
 }
 
 pub fn visit(node: Node) -> String {
-    if node.is_leaf() { return node.value() }
-    if let Some(lnode) = node.left() {
-        let lresult = lnode.value();
-        if Some(rnode) = node.right() {
-            let rresult = rnode.value();
-            let operator = node.value();
+    let token = node.clone().token;
+    match node.nodes() {
+        (Some(lnode), Some(rnode)) => {
+            let lresult = visit(lnode);
+            let rresult = visit(rnode);
             return binary_operation(
-                &lresult,
-                &operator,
-                &rresult).to_string()
-        }
+                lresult,
+                token.value,
+                rresult).to_string()
+        },
+        (Some(lnode), None) => visit(lnode),
+        (None, Some(rnode)) => visit(rnode),
+        (None, None) => token.value
     }
+}
+
+fn binary_operation(operand: String, operator: String, operand2: String) -> i32 {
+    let left = operand.parse::<i32>().unwrap();
+    let right = operand2.parse::<i32>().unwrap();
+    match operator.as_ref() {
+        "+" => left + right,
+        "-" => left - right,
+        "*" => left * right,
+        "/" => left / right,
+        _ => panic!("Sintax error: invalid operator {}", operator)
+    }
+}
+
+#[test]
+fn it_visits_leaf() {
+    let token = Token::build(Kind::Integer, String::from("10"));
+    let leaf = Node::leaf(token);
+
+    assert_eq!("10", visit(leaf))
 }
