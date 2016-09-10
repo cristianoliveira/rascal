@@ -1,4 +1,5 @@
 use token;
+use ast;
 
 // # Interpreter
 //
@@ -61,16 +62,16 @@ impl Interpreter {
     //  factor:: Integer
     //  factor:: ( expr )
     // ```
-    fn factor(&mut self) -> token::Token {
+    fn factor(&mut self) -> ast::Node {
         match self.next().get() {
             Some(token::Token{ kind: token::Kind::BlockBegin , .. }) => {
                 self.consume(token::Kind::BlockBegin);
                 let result = self.expr();
                 self.consume(token::Kind::BlockEnd);
-                token::Token::build(token::Kind::Integer, result)
+                result
             },
             Some(token::Token{ kind: token::Kind::Integer, .. }) => {
-                return self.next().consume(token::Kind::Integer);
+                ast::Node::leaf(self.next().consume(token::Kind::Integer))
             },
             _ => panic!("Error factor")
         }
@@ -84,24 +85,20 @@ impl Interpreter {
     // term:: factor
     // term:: factor (*|/) factor
     // ```
-    fn term(&mut self) -> token::Token {
+    fn term(&mut self) -> ast::Node {
         let mut result = self.factor();
 
         if let Some(token) = self.next().get() {
-            result.value = match token.value.as_ref() {
+            match token.value.as_ref() {
                 "*" | "/" => {
                     let operator = self.consume(token::Kind::Operator);
                     let right = self.factor();
-                    token::binary_operation(
-                        &result,
-                        &operator,
-                        &right
-                    ).to_string()
+                    return ast::Node::new(Some(result), operator, Some(right));
                 },
-                _ => result.clone().value
+                _ => return result
             };
         }
-        return result;
+        return result
     }
 
     // # expr
@@ -112,23 +109,25 @@ impl Interpreter {
     //   expr:: term
     //   expr:: term (+|-) term
     // ```
-    pub fn expr(&mut self) -> String {
+    pub fn expr(&mut self) -> ast::Node {
         let mut result = self.term();
         while let Some(token) = self.next().get() {
             if token.kind == token::Kind::EOF { break }
-            let operation_result = match token.value.as_ref() {
+            match token.value.as_ref() {
                 "+" | "-" => {
                     let operator = self.consume(token::Kind::Operator);
                     let right = self.term();
-                    token::binary_operation(&result, &operator, &right)
+                    result = ast::Node::new(Some(result.clone()), operator, Some(right))
                 },
                 _ => break
             };
-
-            result.value = operation_result.to_string();
         }
+        result
+    }
 
-        format!("{}", result.value)
+    pub fn eval_tree(&mut self) -> String {
+        let tree = self.expr();
+        ast::eval_tree(tree)
     }
 }
 
@@ -138,7 +137,7 @@ fn it_sums() {
     let tokenizer = token::Tokenizer::new(String::from(text));
     let mut interpreter = Interpreter::new(tokenizer);
 
-    assert_eq!("6", interpreter.expr());
+    assert_eq!("6", interpreter.eval_tree());
 }
 
 #[test]
@@ -147,7 +146,7 @@ fn it_substract() {
     let tokenizer = token::Tokenizer::new(String::from(text));
     let mut interpreter = Interpreter::new(tokenizer);
 
-    assert_eq!("4", interpreter.expr());
+    assert_eq!("4", interpreter.eval_tree());
 }
 
 #[test]
@@ -156,7 +155,7 @@ fn it_multiplies() {
     let tokenizer = token::Tokenizer::new(String::from(text));
     let mut interpreter = Interpreter::new(tokenizer);
 
-    assert_eq!("10", interpreter.expr());
+    assert_eq!("10", interpreter.eval_tree());
 }
 
 #[test]
@@ -165,7 +164,7 @@ fn it_divide() {
     let tokenizer = token::Tokenizer::new(String::from(text));
     let mut interpreter = Interpreter::new(tokenizer);
 
-    assert_eq!("2", interpreter.expr());
+    assert_eq!("2", interpreter.eval_tree());
 }
 
 #[test]
@@ -174,7 +173,7 @@ fn it_accepts_multiples_operation() {
     let tokenizer = token::Tokenizer::new(String::from(text));
     let mut interpreter = Interpreter::new(tokenizer);
 
-    assert_eq!("10", interpreter.expr());
+    assert_eq!("10", interpreter.eval_tree());
 }
 
 #[test]
@@ -183,7 +182,7 @@ fn it_respect_precedence() {
     let tokenizer = token::Tokenizer::new(String::from(text));
     let mut interpreter = Interpreter::new(tokenizer);
 
-    assert_eq!("3", interpreter.expr());
+    assert_eq!("3", interpreter.eval_tree());
 }
 
 #[test]
@@ -192,5 +191,5 @@ fn it_respects_grouped_expression() {
     let tokenizer = token::Tokenizer::new(String::from(text));
     let mut interpreter = Interpreter::new(tokenizer);
 
-    assert_eq!("10", interpreter.expr());
+    assert_eq!("10", interpreter.eval_tree());
 }

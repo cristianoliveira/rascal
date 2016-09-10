@@ -11,7 +11,7 @@ fn main() {
         if let Ok(expr) = line {
             let tokenizer = token::Tokenizer::new(expr);
             let mut iterpreter = interpreter::Interpreter::new(tokenizer);
-            println!(">> {}", iterpreter.expr());
+            println!(">> {}", iterpreter.eval_tree());
             println!(">>");
         }
     }

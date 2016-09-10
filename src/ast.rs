@@ -2,6 +2,10 @@
 
 use token::{Token, Kind};
 
+// Node
+//
+// Represents a node inside of the tree
+// each node must have an token and optional nodes
 #[derive(Debug, Clone, PartialEq)]
 pub struct Node{
     pub token: Token,
@@ -29,6 +33,28 @@ impl Node {
     }
 }
 
+// eval_tree 
+//
+// It visits each node evaluating the binary operations returning the 
+// result as String
+// 
+// Example:
+//   The expression 3 * 5 + 5 will produce the follow tree and the result 20.
+//   It evaluates the left side first and applies a post-orden calc
+//
+//         +-+
+//         |-|
+//     +---------+
+//     |         |
+//     v         v
+//    +-+       +-+
+//    |*|       |5|
+//  +-----+     +-+
+//  |     |
+//  v     v
+// ---   ---
+// |3|   |5|
+// +-+   +-+
 pub fn eval_tree(node: Node) -> String {
     let token = node.clone().token;
     match node.nodes() {
@@ -46,6 +72,8 @@ pub fn eval_tree(node: Node) -> String {
     }
 }
 
+// binary_operation
+// Eval the binary expression for the given left, operator and right operand
 fn binary_operation(operand: String, operator: String, operand2: String) -> i32 {
     let left = operand.parse::<i32>().unwrap();
     let right = operand2.parse::<i32>().unwrap();
