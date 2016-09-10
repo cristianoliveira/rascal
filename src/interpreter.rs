@@ -13,16 +13,9 @@ impl Interpreter {
         }
     }
 
-    pub fn next(&mut self, kind: token::Kind) -> Option<token::Token> {
+    pub fn next(&mut self, expected_kind: token::Kind) -> Option<token::Token> {
         if self.current.is_some() { return self.current.clone() }
         if let Some(token) = self.tokenizer.next() {
-            if token.kind != kind {
-                panic!("Sintax error unexpected token {:?} at position {}",
-                       token,
-                       self.tokenizer.position
-                       )
-            }
-
             self.current = Some(token.clone());
             self.current.clone()
         } else {
@@ -30,15 +23,29 @@ impl Interpreter {
         }
     }
 
-    pub fn consume_next(&mut self, kind: token::Kind) -> Option<token::Token> {
-        if self.current.is_some() {
-            let curr = self.current.clone();
-            self.current = None;
-            curr
+    pub fn consume_next(&mut self, expected_kind: token::Kind) -> Option<token::Token> {
+        let token = match self.current {
+            Some(_) => {
+                let curr = self.current.clone();
+                self.current = None;
+                curr
+            },
+            None => {
+                let next = self.next(expected_kind.clone());
+                self.current = None;
+                next.clone()
+            }
+        };
+
+        if token.clone().unwrap().kind == expected_kind {
+            return token;
         } else {
-            let next = self.next(kind);
-            self.current = None;
-            next.clone()
+            panic!(
+                "Sintax error: expected token kind {:?} found {:?} at position {}",
+                expected_kind,
+                token,
+                self.tokenizer.position
+                )
         }
     }
 
@@ -50,11 +57,8 @@ impl Interpreter {
                 "*" | "/" => {
                     self.consume_next(token::Kind::Operator);
                     if let Some(right) = self.consume_next(token::Kind::Integer) {
-                        result.value = binary_operation(
-                            result.clone().as_integer(),
-                            operator.value,
-                            right.as_integer()
-                        ).to_string()
+                        result.value = 
+                            binary_operation(&result, &operator, &right).to_string()
                     }
                     result
                 },
@@ -70,12 +74,8 @@ impl Interpreter {
             self.consume_next(token::Kind::Operator);
             let right = self.term();
 
-            let operation_result = match &*operator.value {
-                "+" | "-" => binary_operation(
-                                result.clone().as_integer(),
-                                operator.value,
-                                right.as_integer()
-                            ),
+            let operation_result = match operator.value.as_ref() {
+                "+" | "-" => binary_operation(&result, &operator, &right),
                 _ => result.clone().as_integer()
             };
 
@@ -86,13 +86,22 @@ impl Interpreter {
     }
 }
 
-fn binary_operation(first: i32, operator: String, second: i32) -> i32 {
-    match &*operator {
-        "+" => first + second,
-        "-" => first - second,
-        "*" => first * second,
-        "/" => first / second,
-        _ => panic!("Sintax error: invalid operator {}", operator)
+fn binary_operation(first: &token::Token, operator: &token::Token, second: &token::Token) -> i32 {
+    if first.kind == token::Kind::Integer {
+        let operand = first.clone().as_integer();
+        let operand2 = second.clone().as_integer();
+        match &*operator.value {
+            "+" => operand + operand2,
+            "-" => operand - operand2,
+            "*" => operand * operand2,
+            "/" => operand / operand2,
+            _ => panic!("Sintax error: invalid operator {}", operator.value)
+        }
+    } else {
+        panic!("Sintax error: invalid binary operation using {} {} {}.",
+               first.value,
+               operator.value,
+               second.value)
     }
 }
 
