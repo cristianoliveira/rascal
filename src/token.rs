@@ -1,3 +1,6 @@
+
+// #Kind
+// Represents a type of a token
 #[derive(Debug, Clone, PartialEq)]
 pub enum Kind {
     Integer,
@@ -9,6 +12,8 @@ pub enum Kind {
 }
 
 impl Kind {
+    // classify
+    // Retrieve a Kind from a given optional char
     pub fn classify(character: &Option<char>) -> Kind {
         match *character {
             Some(value) => {
@@ -27,6 +32,8 @@ impl Kind {
     }
 }
 
+// # Token
+// Represents a value and a type inside the system
 #[derive(Debug, Clone, PartialEq)]
 pub struct Token {
     pub kind: Kind,
@@ -43,6 +50,9 @@ impl Token {
     }
 }
 
+//# Tokenizer
+//
+// Responsible for interpret a raw String and extract Tokens from it
 #[derive(Clone)]
 pub struct Tokenizer {
     pub text: String,

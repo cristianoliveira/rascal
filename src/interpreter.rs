@@ -1,5 +1,9 @@
 use token;
 
+// # Interpreter
+//
+// Represents the interpreter that is responsible for interpret 
+// the stream of token from a given Tokenizer
 pub struct Interpreter {
     tokenizer: token::Tokenizer,
     current: Option<token::Token>
@@ -13,15 +17,25 @@ impl Interpreter {
         }
     }
 
+    // next
+    //
+    // It store the next token from Tokenizer and return itself for
+    // chaining porpouses
     pub fn next(&mut self) -> &mut Self {
         if self.current.is_none() { self.current = self.tokenizer.next() }
         self
     }
 
+    // get
+    //
+    // It gets the current token without consuming it
     pub fn get(&mut self) -> Option<token::Token> {
         self.current.clone()
     }
 
+    // consume
+    //
+    // It is responsible for consume the current Token
     pub fn consume(&mut self, expected_kind: token::Kind) -> Option<token::Token> {
         let mut cosumed = self.current.clone();
         if let Some(token) = self.current.clone() {
@@ -38,6 +52,14 @@ impl Interpreter {
         return cosumed;
     }
 
+    // factor
+    //
+    // factor can be a terminal Integer or result of a grouped expr
+    // represented as context free grammar:
+    // ```
+    //  factor:: Integer
+    //  factor:: ( expr )
+    // ```
     fn factor(&mut self) -> token::Token {
         match self.next().get() {
             Some(token::Token{ kind: token::Kind::BlockBegin , .. }) => {
@@ -51,6 +73,14 @@ impl Interpreter {
         }
     }
 
+    // term
+    //
+    // One term can be a `factor` or result of `factor * factor`
+    // or `factor / factor represented in context free grammar:
+    // ```
+    // term:: factor
+    // term:: factor (*|/) factor
+    // ```
     fn term(&mut self) -> token::Token {
         let mut result = self.factor();
 
@@ -71,6 +101,14 @@ impl Interpreter {
         return result;
     }
 
+    // # expr
+    //
+    // One expr can be a `term` or result of `term + term` or `term - term`
+    // represented in context free grammar:
+    // ```
+    //   expr:: term
+    //   expr:: term (+|-) term
+    // ```
     pub fn expr(&mut self) -> String {
         let mut result = self.term();
         while let Some(operator) = self.next().get() {
