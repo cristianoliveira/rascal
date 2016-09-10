@@ -92,7 +92,7 @@ impl Interpreter {
                 "*" | "/" => {
                     let operator = self.consume(token::Kind::Operator);
                     let right = self.factor();
-                    binary_operation(
+                    token::binary_operation(
                         &result,
                         &operator,
                         &right
@@ -120,7 +120,7 @@ impl Interpreter {
                 "+" | "-" => {
                     let operator = self.consume(token::Kind::Operator);
                     let right = self.term();
-                    binary_operation(&result, &operator, &right)
+                    token::binary_operation(&result, &operator, &right)
                 },
                 _ => break
             };
@@ -129,25 +129,6 @@ impl Interpreter {
         }
 
         format!("{}", result.value)
-    }
-}
-
-fn binary_operation(first: &token::Token, operator: &token::Token, second: &token::Token) -> i32 {
-    if first.kind == token::Kind::Integer {
-        let operand = first.clone().as_integer();
-        let operand2 = second.clone().as_integer();
-        match &*operator.value {
-            "+" => operand + operand2,
-            "-" => operand - operand2,
-            "*" => operand * operand2,
-            "/" => operand / operand2,
-            _ => panic!("Sintax error: invalid operator {}", operator.value)
-        }
-    } else {
-        panic!("Sintax error: invalid binary operation using {} {} {}.",
-               first.value,
-               operator.value,
-               second.value)
     }
 }
 
