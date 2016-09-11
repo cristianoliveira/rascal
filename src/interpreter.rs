@@ -95,7 +95,7 @@ fn it_eval_the_node_binary_operation() {
     let left = Node::leaf(Token::build(Kind::Integer, String::from("3")));
     let operator = Token::build(Kind::Operator, String::from("+"));
     let right = Node::leaf(Token::build(Kind::Integer, String::from("5")));
-    let node = Node::new(Some(left), operator, Some(right));
+    let node = Node::new(left, operator, right);
 
     assert_eq!("8", eval_tree(node))
 }
@@ -106,11 +106,11 @@ fn it_eval_complex_tree() {
     let left = Node::leaf(Token::build(Kind::Integer, String::from("3")));
     let operator = Token::build(Kind::Operator, String::from("*"));
     let right = Node::leaf(Token::build(Kind::Integer, String::from("5")));
-    let plusnode = Node::new(Some(left), operator, Some(right));
+    let plusnode = Node::new(left, operator, right);
 
     let operator = Token::build(Kind::Operator, String::from("+"));
     let sumright = Node::leaf(Token::build(Kind::Integer, String::from("5")));
-    let sumnode = Node::new(Some(plusnode), operator, Some(sumright));
+    let sumnode = Node::new(plusnode, operator, sumright);
 
     assert_eq!("20", eval_tree(sumnode))
 }
@@ -124,7 +124,7 @@ fn it_eval_unary_operations() {
 
     let operator = Token::build(Kind::Operator, String::from("-"));
     let left = Node::leaf(Token::build(Kind::Integer, String::from("2")));
-    let sumnode = Node::new(Some(left), operator, Some(unarynode));
+    let sumnode = Node::new(left, operator, unarynode);
 
     assert_eq!("4", eval_tree(sumnode))
 }

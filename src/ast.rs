@@ -9,16 +9,18 @@ use token::{Token, Kind};
 #[derive(Debug, Clone, PartialEq)]
 pub struct Node{
     pub token: Token,
+    pub statements: Option<Vec<Node>>,
     left: Box<Option<Node>>,
     right: Box<Option<Node>>,
 }
 
 impl Node {
-    pub fn new(left: Option<Node>, token: Token, right: Option<Node>) -> Self {
+    pub fn new(left: Node, token: Token, right: Node) -> Self {
         Node {
-            left: Box::new(left),
+            left: Box::new(Some(left)),
             token: token,
-            right: Box::new(right),
+            right: Box::new(Some(right)),
+            statements: None
         }
     }
     pub fn leaf(token: Token) -> Self {
@@ -26,6 +28,7 @@ impl Node {
             left: Box::new(None),
             token: token,
             right: Box::new(None),
+            statements: None
         }
     }
     pub fn unary(token: Token, node: Node) -> Self {
@@ -33,6 +36,23 @@ impl Node {
             left: Box::new(None),
             token: token,
             right: Box::new(Some(node)),
+            statements: None
+        }
+    }
+    pub fn compound(statements: Vec<Node>) -> Self {
+        Node {
+            left: Box::new(None),
+            token: Token::build(Kind::Statement, String::new()),
+            right: Box::new(None),
+            statements: Some(statements)
+        }
+    }
+    pub fn empty() -> Self {
+        Node {
+            left: Box::new(None),
+            token: Token::build(Kind::Statement, String::new()),
+            right: Box::new(None),
+            statements: None
         }
     }
     pub fn nodes(self) -> (Option<Node>, Option<Node>) {

@@ -13,8 +13,10 @@ pub enum Kind {
     // Statements
     Begin,
     End,
+    Statement,
     StatementEnd,
     Assign,
+    ID,
 
     // Others
     Space,
@@ -103,6 +105,25 @@ impl Iterator for Tokenizer {
             Kind::Space => self.next(),
             Kind::Operator =>
                 Some(Token::build(kind, format!("{}", current.unwrap()))),
+            Kind::Alphanum => {
+                let mut chars = vec![current.unwrap()];
+                let mut next = self.text.chars().nth(self.position);
+                let mut kindnext = Kind::classify(&next);
+
+                while kindnext == kind || kindnext == Kind::Integer {
+                    chars.push(next.unwrap());
+                    self.position += 1;
+                    next = self.text.chars().nth(self.position);
+                    kindnext = Kind::classify(&next);
+                }
+
+                let word: String = chars.clone().into_iter().collect();
+                if let Some(reserved) = Kind::reserved(&word) {
+                    Some(Token{ kind: reserved, value: word })
+                } else {
+                    Some(Token{ kind: Kind::ID, value: word })
+                }
+            }
             _ => {
                 let mut chars = vec![current.unwrap()];
                 let mut next = self.text.chars().nth(self.position);
@@ -114,11 +135,6 @@ impl Iterator for Tokenizer {
 
                     next = self.text.chars().nth(self.position);
                     kindnext = Kind::classify(&next);
-
-                    let word: String = chars.clone().into_iter().collect();
-                    if let Some(reserved) = Kind::reserved(&word) {
-                        return Some(Token{ kind: reserved, value: word });
-                    }
                 }
 
                 Some(Token::build(kind, chars.into_iter().collect()))
@@ -270,7 +286,7 @@ fn it_accepts_statements() {
 
     assert_eq!(tokens.next(), Some(Token { kind: Kind::Begin,
                                            value: String::from("BEGIN")}));
-    assert_eq!(tokens.next(), Some(Token { kind: Kind::Alphanum,
+    assert_eq!(tokens.next(), Some(Token { kind: Kind::ID,
                                            value: String::from("x")}));
     assert_eq!(tokens.next(), Some(Token { kind: Kind::Assign,
                                            value: String::from(":=")}));
