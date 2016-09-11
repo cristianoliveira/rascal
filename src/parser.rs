@@ -318,16 +318,15 @@ fn it_parses_multiple_statements() {
     let mut parser = Parser::new(tokenizer);
     let assign_token = Token{ kind: Kind::Assign, value: String::from(":=")};
 
-    let expr = test_node_builder(String::from("10"),
-                                 String::from("+"),
-                                 String::from("5"));
 
     let yvar = ast::Node::leaf(Token{ kind: Kind::ID, value: String::from("y")});
     let yvalue = ast::Node::leaf(Token{ kind: Kind::Integer, value: String::from("100")});
     let yassign = ast::Node::new(yvar, assign_token.clone(), yvalue);
 
+    let expr = test_node_builder(String::from("10"),
+                                 String::from("+"),
+                                 String::from("5"));
     let xvar = ast::Node::leaf(Token{ kind: Kind::ID, value: String::from("x")});
-    let xassign_token = Token{ kind: Kind::Assign, value: String::from(":=")};
     let xassign = ast::Node::new(xvar, assign_token, expr);
 
     let comp = ast::Node::compound(vec![xassign, yassign]);

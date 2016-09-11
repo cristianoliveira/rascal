@@ -65,10 +65,6 @@ pub struct Token {
 }
 
 impl Token {
-    pub fn as_integer(self) -> i32 {
-        self.value.parse::<i32>().unwrap()
-    }
-
     pub fn build(kind: Kind, value: String) -> Token {
         Token { kind: kind, value: value }
     }
@@ -102,9 +98,12 @@ impl Iterator for Tokenizer {
         self.position += 1;
         match kind {
             Kind::EOF => None,
+
             Kind::Space => self.next(),
+
             Kind::Operator =>
                 Some(Token::build(kind, format!("{}", current.unwrap()))),
+
             Kind::Alphanum => {
                 let mut chars = vec![current.unwrap()];
                 let mut next = self.text.chars().nth(self.position);
@@ -124,6 +123,7 @@ impl Iterator for Tokenizer {
                     Some(Token{ kind: Kind::ID, value: word })
                 }
             }
+
             _ => {
                 let mut chars = vec![current.unwrap()];
                 let mut next = self.text.chars().nth(self.position);
@@ -142,25 +142,6 @@ impl Iterator for Tokenizer {
         }
     }
 
-}
-
-pub fn binary_operation(first: &Token, operator: &Token, second: &Token) -> i32 {
-    if first.kind == Kind::Integer {
-        let operand = first.clone().as_integer();
-        let operand2 = second.clone().as_integer();
-        match &*operator.value {
-            "+" => operand + operand2,
-            "-" => operand - operand2,
-            "*" => operand * operand2,
-            "/" => operand / operand2,
-            _ => panic!("Sintax error: invalid operator {}", operator.value)
-        }
-    } else {
-        panic!("Sintax error: invalid binary operation using {} {} {}.",
-               first.value,
-               operator.value,
-               second.value)
-    }
 }
 
 #[test]
