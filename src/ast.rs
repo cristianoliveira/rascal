@@ -72,6 +72,24 @@ pub fn eval_tree(node: Node) -> String {
     }
 }
 
+pub fn reverse_polish_notation(node: Node) -> Vec<String> {
+    let token = node.clone().token;
+    let mut notation = vec![];
+    match node.nodes() {
+        (Some(lnode), Some(rnode)) => {
+            let lresult = reverse_polish_notation(lnode);
+            let rresult = reverse_polish_notation(rnode);
+            notation.extend(lresult.iter().cloned());
+            notation.extend(rresult.iter().cloned());
+            notation.push(token.value);
+            return notation
+        },
+        (Some(lnode), None) => reverse_polish_notation(lnode),
+        (None, Some(rnode)) => reverse_polish_notation(rnode),
+        (None, None) => vec![token.value]
+    }
+}
+
 // binary_operation
 // Eval the binary expression for the given left, operator and right operand
 fn binary_operation(operand: String, operator: String, operand2: String) -> i32 {
