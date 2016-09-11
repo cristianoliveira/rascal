@@ -93,12 +93,19 @@ impl Parser {
     // Represented as context free grammar:
     // ```
     //   statement: compoud_statement
+    //   statement: return_statement
     //   statement: assign_statement
     //   statement: empty_statement
     // ```
     fn statement(&mut self) -> ast::Node {
         match self.next().get() {
-            Some(Token{ kind: Kind::ID, ..}) => self.assign_statement(),
+            Some(Token{ kind: Kind::Return, ..}) => {
+                self.consume(Kind::Return);
+                ast::Node::_return(self.expr())
+            },
+            Some(Token{ kind: Kind::ID, ..}) => {
+                self.assign_statement()
+            },
             Some(Token{ kind: Kind::Begin, ..}) => self.compound(),
             _ => ast::Node::empty()
         }

@@ -65,7 +65,9 @@ impl Interpreter {
             (None, Some(rnode)) => match tree.clone().kind() {
                 Kind::Operator =>
                     unary_operation(tree.value(), self.eval_tree(rnode)).to_string(),
-                    _ => self.eval_tree(rnode)
+                Kind::Return =>
+                    self.eval_tree(rnode),
+                _ => String::new()
             },
 
             (None, None) => {
@@ -259,4 +261,15 @@ fn it_eval_block_retrieve_vars_from_symbol_table() {
     let result = interpreter.eval_tree(parser.parse());
 
     assert_eq!("15", interpreter.symbol_table["y"]);
+}
+
+#[test]
+fn it_eval_block_retrieve_return_statement() {
+    let text = "begin x := 10; y := x + 5; return y + 5 end";
+    let tokenizer = Tokenizer::new(String::from(text));
+    let mut parser = Parser::new(tokenizer);
+    let mut interpreter = Interpreter::new();
+    let result = interpreter.eval_tree(parser.parse());
+
+    assert_eq!("20", result);
 }

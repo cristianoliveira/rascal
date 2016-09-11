@@ -39,6 +39,14 @@ impl Node {
             statements: None
         }
     }
+    pub fn _return(node: Node) -> Self {
+        Node {
+            left: Box::new(None),
+            token: Token::build(Kind::Return, String::new()),
+            right: Box::new(Some(node)),
+            statements: None
+        }
+    }
     pub fn compound(statements: Vec<Node>) -> Self {
         Node {
             left: Box::new(None),
