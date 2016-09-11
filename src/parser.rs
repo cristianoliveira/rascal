@@ -112,6 +112,7 @@ impl Parser {
     //   assign_statement: variable ASSIGN expr
     // ```
     fn assign_statement(&mut self) -> ast::Node {
+        println!("assign_statement: {:?}", self.next().get());
         ast::Node::new(self.variable(),
                        self.next().consume(Kind::Assign),
                        self.expr())
@@ -214,7 +215,10 @@ impl Parser {
     }
 
     pub fn parse(&mut self) -> ast::Node {
-        self.expr()
+        match self.next().get() {
+            Some(Token{kind: Kind::Begin, ..}) => self.compound(),
+            _ => self.expr()
+        }
     }
 }
 
@@ -287,4 +291,45 @@ fn it_parses_respecting_parentesis_precedence() {
 
     let expected = ast::Node::new(plusnode, token, rnode);
     assert_eq!(expected, parser.parse());
+}
+
+#[test]
+fn it_parses_simple_block() {
+    let text = "BEGIN x := 10+5 END";
+    let tokenizer = Tokenizer::new(String::from(text));
+    let mut parser = Parser::new(tokenizer);
+
+    let expr = test_node_builder(String::from("10"),
+                                 String::from("+"),
+                                 String::from("5"));
+
+    let var = ast::Node::leaf(Token{ kind: Kind::ID, value: String::from("x")});
+    let assign_token = Token{ kind: Kind::Assign, value: String::from(":=")};
+    let assign = ast::Node::new(var, assign_token, expr);
+
+    let comp = ast::Node::compound(vec![assign]);
+    assert_eq!(comp, parser.parse());
+}
+
+#[test]
+fn it_parses_multiple_statements() {
+    let text = "BEGIN x := 10+5; y := 100 END";
+    let tokenizer = Tokenizer::new(String::from(text));
+    let mut parser = Parser::new(tokenizer);
+    let assign_token = Token{ kind: Kind::Assign, value: String::from(":=")};
+
+    let expr = test_node_builder(String::from("10"),
+                                 String::from("+"),
+                                 String::from("5"));
+
+    let yvar = ast::Node::leaf(Token{ kind: Kind::ID, value: String::from("y")});
+    let yvalue = ast::Node::leaf(Token{ kind: Kind::Integer, value: String::from("100")});
+    let yassign = ast::Node::new(yvar, assign_token.clone(), yvalue);
+
+    let xvar = ast::Node::leaf(Token{ kind: Kind::ID, value: String::from("x")});
+    let xassign_token = Token{ kind: Kind::Assign, value: String::from(":=")};
+    let xassign = ast::Node::new(xvar, assign_token, expr);
+
+    let comp = ast::Node::compound(vec![xassign, yassign]);
+    assert_eq!(comp, parser.parse());
 }
