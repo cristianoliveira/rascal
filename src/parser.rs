@@ -141,22 +141,27 @@ impl Parser {
     fn factor(&mut self) -> ast::Node {
         match self.next().get() {
             Some(Token{ kind: Kind::Operator, .. }) => {
-                let token = self.consume(Kind::Operator);
-                ast::Node::unary(token, self.factor())
+                ast::Node::unary(self.consume(Kind::Operator), self.factor())
             },
+
             Some(Token{ kind: Kind::GroupBegin , .. }) => {
                 self.consume(Kind::GroupBegin);
                 let result = self.expr();
                 self.consume(Kind::GroupEnd);
                 result
             },
+
             Some(Token{ kind: Kind::Integer, .. }) => {
                 ast::Node::leaf(self.next().consume(Kind::Integer))
             },
+
             Some(Token{ kind: Kind::ID, .. }) => {
                 self.variable()
             },
-            _ => panic!("Error factor")
+
+            other =>
+            panic!("Factor error: exptected Operator|GroupBegin|Integer|ID
+                   found {:?}", other)
         }
     }
 
@@ -169,16 +174,16 @@ impl Parser {
     // term:: factor (*|/) factor
     // ```
     fn term(&mut self) -> ast::Node {
-        let mut result = self.factor();
+        let result = self.factor();
 
         if let Some(token) = self.next().get() {
             match token.value.as_ref() {
                 "*" | "/" => {
-                    let operator = self.consume(Kind::Operator);
-                    let right = self.factor();
-                    return ast::Node::new(result, operator, right);
+                    return ast::Node::new(result.clone(),
+                                          self.consume(Kind::Operator),
+                                          self.factor());
                 },
-                _ => return result
+                _ => ()
             };
         }
         return result
@@ -198,9 +203,9 @@ impl Parser {
             if token.kind == Kind::EOF { break }
             match token.value.as_ref() {
                 "+" | "-" => {
-                    let operator = self.consume(Kind::Operator);
-                    let right = self.term();
-                    result = ast::Node::new(result.clone(), operator, right)
+                    result = ast::Node::new(result.clone(),
+                                            self.consume(Kind::Operator),
+                                            self.term())
                 },
                 _ => break
             };
