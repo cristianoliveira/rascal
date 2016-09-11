@@ -7,27 +7,13 @@ use ast;
 // from a given Tokenizer into an Abstracted Sintax Tree
 pub struct Parser {
     tokenizer: Tokenizer,
-    current: Option<Token>
 }
 
 impl Parser {
     pub fn new(lexer: Tokenizer) -> Self {
         Parser {
             tokenizer: lexer,
-            current: None
         }
-    }
-
-    // tokenizer aliases
-    fn next(&mut self) -> &mut Self {
-        self.tokenizer.advance();
-        self
-    }
-    fn get(&mut self) -> Option<Token> {
-        self.tokenizer.get()
-    }
-    fn consume(&mut self, expected_kind: Kind) -> Token {
-        self.tokenizer.consume(expected_kind)
     }
 
     // compound
@@ -38,9 +24,9 @@ impl Parser {
     //   compound: BEGIN statement_list END
     // ```
     fn compound(&mut self) -> ast::Node {
-        self.consume(Kind::Begin);
+        self.tokenizer.consume(Kind::Begin);
         let statement_list = self.statement_list();
-        self.consume(Kind::End);
+        self.tokenizer.consume(Kind::End);
         ast::Node::compound(statement_list)
     }
 
@@ -55,8 +41,8 @@ impl Parser {
     // ```
     fn statement_list(&mut self) -> Vec<ast::Node> {
         let mut statements = vec![self.statement()];
-        if let Some(Token{kind: Kind::StatementEnd, ..}) = self.next().get() {
-            self.consume(Kind::StatementEnd);
+        if let Some(Token{kind: Kind::StatementEnd, ..}) = self.tokenizer.advance().get() {
+            self.tokenizer.consume(Kind::StatementEnd);
             statements.extend(self.statement_list())
         }
         return statements
@@ -73,9 +59,9 @@ impl Parser {
     //   statement: empty_statement
     // ```
     fn statement(&mut self) -> ast::Node {
-        match self.next().get() {
+        match self.tokenizer.advance().get() {
             Some(Token{ kind: Kind::Return, ..}) => {
-                self.consume(Kind::Return);
+                self.tokenizer.consume(Kind::Return);
                 ast::Node::_return(self.expr())
             },
             Some(Token{ kind: Kind::ID, ..}) => {
@@ -95,7 +81,7 @@ impl Parser {
     // ```
     fn assign_statement(&mut self) -> ast::Node {
         ast::Node::new(self.variable(),
-                       self.next().consume(Kind::Assign),
+                       self.tokenizer.advance().consume(Kind::Assign),
                        self.expr())
     }
 
@@ -106,7 +92,7 @@ impl Parser {
     //   variable: ID
     // ```
     fn variable(&mut self) -> ast::Node {
-        let token = self.consume(Kind::ID);
+        let token = self.tokenizer.consume(Kind::ID);
         ast::Node::leaf(token)
     }
 
@@ -121,20 +107,20 @@ impl Parser {
     //  factor:: variable
     // ```
     fn factor(&mut self) -> ast::Node {
-        match self.next().get() {
+        match self.tokenizer.advance().get() {
             Some(Token{ kind: Kind::Operator, .. }) => {
-                ast::Node::unary(self.consume(Kind::Operator), self.factor())
+                ast::Node::unary(self.tokenizer.consume(Kind::Operator), self.factor())
             },
 
             Some(Token{ kind: Kind::GroupBegin , .. }) => {
-                self.consume(Kind::GroupBegin);
+                self.tokenizer.consume(Kind::GroupBegin);
                 let result = self.expr();
-                self.consume(Kind::GroupEnd);
+                self.tokenizer.consume(Kind::GroupEnd);
                 result
             },
 
             Some(Token{ kind: Kind::Integer, .. }) => {
-                ast::Node::leaf(self.next().consume(Kind::Integer))
+                ast::Node::leaf(self.tokenizer.advance().consume(Kind::Integer))
             },
 
             Some(Token{ kind: Kind::ID, .. }) => {
@@ -158,11 +144,11 @@ impl Parser {
     fn term(&mut self) -> ast::Node {
         let result = self.factor();
 
-        if let Some(token) = self.next().get() {
+        if let Some(token) = self.tokenizer.advance().get() {
             match token.value.as_ref() {
                 "*" | "/" => {
                     return ast::Node::new(result.clone(),
-                                          self.consume(Kind::Operator),
+                                          self.tokenizer.consume(Kind::Operator),
                                           self.factor());
                 },
                 _ => ()
@@ -181,12 +167,12 @@ impl Parser {
     // ```
     pub fn expr(&mut self) -> ast::Node {
         let mut result = self.term();
-        while let Some(token) = self.next().get() {
+        while let Some(token) = self.tokenizer.advance().get() {
             if token.kind == Kind::EOF { break }
             match token.value.as_ref() {
                 "+" | "-" => {
                     result = ast::Node::new(result.clone(),
-                                            self.consume(Kind::Operator),
+                                            self.tokenizer.consume(Kind::Operator),
                                             self.term())
                 },
                 _ => break
@@ -196,7 +182,7 @@ impl Parser {
     }
 
     pub fn parse(&mut self) -> ast::Node {
-        match self.next().get() {
+        match self.tokenizer.advance().get() {
             Some(Token{kind: Kind::Begin, ..}) => self.compound(),
             _ => self.expr()
         }

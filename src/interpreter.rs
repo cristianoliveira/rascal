@@ -40,19 +40,19 @@ impl Interpreter {
     // |3|   |5|
     // +-+   +-+
     pub fn eval_tree(&mut self, tree: Node) -> String {
-        match tree.clone().nodes() {
+        let nodes = tree.clone().nodes();
+        let kind = tree.clone().kind();
+        match nodes {
             (Some(lnode), Some(rnode)) => {
-                match tree.clone().kind() {
+                match kind {
                     Kind::Operator =>
                         binary_operation(self.eval_tree(lnode),
-                                         tree.value(),
+                                         &tree.value(),
                                          self.eval_tree(rnode)).to_string(),
 
                     Kind::Assign => {
-                        let variable_value = self.eval_tree(rnode);
-                        self.symbol_table.insert(lnode.value(),
-                                                 variable_value.clone());
-                        variable_value
+                        let value = self.eval_tree(rnode);
+                        self.assign_variable(lnode.value(), value)
                     },
 
                     _ => panic!("Interpreter error: unexpecte node kind {:?}",
@@ -65,13 +65,14 @@ impl Interpreter {
             (None, Some(rnode)) => match tree.clone().kind() {
                 Kind::Operator =>
                     unary_operation(tree.value(), self.eval_tree(rnode)).to_string(),
+
                 Kind::Return =>
                     self.eval_tree(rnode),
                 _ => String::new()
             },
 
             (None, None) => {
-                if let Some(statements) = tree.statements {
+                if let Some(statements) = tree.clone().statements {
                     return statements.iter()
                               .map(|n| self.eval_tree(n.clone()))
                               .fold(String::new(), |_, s|{
@@ -79,14 +80,17 @@ impl Interpreter {
                               })
                 }
 
-                match tree.clone().kind() {
-                    Kind::ID => {
-                        self.symbol_table[&tree.value()].clone()
-                    },
+                match kind {
+                    Kind::ID => self.symbol_table[&tree.value()].clone(),
                     _ => tree.value()
                 }
             }
         }
+    }
+
+    fn assign_variable(&mut self, name: String, value: String) -> String {
+        self.symbol_table.insert(name, value.clone());
+        value
     }
 }
 
@@ -105,7 +109,7 @@ fn unary_operation(operator: String, operand: String) -> i32 {
 
 // binary_operation
 // Resolve binary expression for the given left, operator and right operand
-fn binary_operation(operand: String, operator: String, operand2: String) -> i32 {
+fn binary_operation(operand: String, operator: &String, operand2: String) -> i32 {
     let left = if let Ok(val) = operand.parse::<i32>() { val } else {
         panic!("Sintax error: invalid operand: {}", operand)
     };
