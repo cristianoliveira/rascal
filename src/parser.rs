@@ -206,16 +206,3 @@ fn it_parses_respecting_parentesis_precedence() {
     let expected = ast::Node::new(Some(plusnode), token, Some(rnode));
     assert_eq!(expected, parser.parse());
 }
-
-#[test]
-fn it_parses_to_reverse_polish_notation() {
-    let text = "(10+5)*4";
-    let tokenizer = Tokenizer::new(String::from(text));
-    let mut parser = Parser::new(tokenizer);
-    let expected: Vec<String> = ["10","5","+","4","*"].iter()
-                                                      .map(|x| String::from(*x))
-                                                      .collect();
-
-    assert_eq!(expected,
-               ast::reverse_polish_notation(parser.parse()));
-}

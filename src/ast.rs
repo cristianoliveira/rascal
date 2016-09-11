@@ -40,50 +40,12 @@ impl Node {
     }
 }
 
-// eval_tree 
-//
-// It visits each node evaluating the binary operations returning the 
-// result as String
-// 
+// Just part of exercise it is not used !!
+// Interpret the tree parsing it to a Reversal Polish Notation
 // Example:
-//   The expression 3 * 5 + 5 will produce the follow tree and the result 20.
-//   It evaluates the left side first and applies a post-orden calc
-//
-//         +-+
-//         |-|
-//     +---------+
-//     |         |
-//     v         v
-//    +-+       +-+
-//    |*|       |5|
-//  +-----+     +-+
-//  |     |
-//  v     v
-// ---   ---
-// |3|   |5|
-// +-+   +-+
-pub fn eval_tree(node: Node) -> String {
-    let token = node.clone().token;
-    match node.nodes() {
-        (Some(lnode), Some(rnode)) => {
-            let lresult = eval_tree(lnode);
-            let rresult = eval_tree(rnode);
-            return binary_operation(
-                lresult,
-                token.value,
-                rresult).to_string()
-        },
-        (Some(lnode), None) => eval_tree(lnode),
-        (None, Some(rnode)) => match token {
-            Token{ kind: Kind::Operator, .. } =>
-                unary_operation(token.value, eval_tree(rnode)).to_string(),
-                _ => eval_tree(rnode)
-        },
-        (None, None) => token.value
-    }
-}
-
-pub fn reverse_polish_notation(node: Node) -> Vec<String> {
+//   2+2*5 => [2,5,*,2,+]
+//   2+2 => [2,2,+]
+fn reverse_polish_notation(node: Node) -> Vec<String> {
     let token = node.clone().token;
     let mut notation = vec![];
     match node.nodes() {
@@ -99,75 +61,4 @@ pub fn reverse_polish_notation(node: Node) -> Vec<String> {
         (None, Some(rnode)) => reverse_polish_notation(rnode),
         (None, None) => vec![token.value]
     }
-}
-
-fn unary_operation(operator: String, operand: String) -> i32 {
-    let ioperand = operand.parse::<i32>().unwrap();
-    match operator.as_ref() {
-        "+" => ioperand,
-        "-" => -(ioperand),
-        _ => panic!("Sintax error: invalid unary operator {}", operator)
-    }
-}
-
-// binary_operation
-// Eval the binary expression for the given left, operator and right operand
-fn binary_operation(operand: String, operator: String, operand2: String) -> i32 {
-    let left = operand.parse::<i32>().unwrap();
-    let right = operand2.parse::<i32>().unwrap();
-    match operator.as_ref() {
-        "+" => left + right,
-        "-" => left - right,
-        "*" => left * right,
-        "/" => left / right,
-        _ => panic!("Sintax error: invalid operator {}", operator)
-    }
-}
-
-#[test]
-fn it_eval_tree_leaf() {
-    let token = Token::build(Kind::Integer, String::from("10"));
-    let leaf = Node::leaf(token);
-
-    assert_eq!("10", eval_tree(leaf))
-}
-
-#[test]
-fn it_eval_the_node_binary_operation() {
-    // 3+5
-    let left = Node::leaf(Token::build(Kind::Integer, String::from("3")));
-    let operator = Token::build(Kind::Operator, String::from("+"));
-    let right = Node::leaf(Token::build(Kind::Integer, String::from("5")));
-    let node = Node::new(Some(left), operator, Some(right));
-
-    assert_eq!("8", eval_tree(node))
-}
-
-#[test]
-fn it_eval_complex_tree() {
-    // 5+5*3
-    let left = Node::leaf(Token::build(Kind::Integer, String::from("3")));
-    let operator = Token::build(Kind::Operator, String::from("*"));
-    let right = Node::leaf(Token::build(Kind::Integer, String::from("5")));
-    let plusnode = Node::new(Some(left), operator, Some(right));
-
-    let operator = Token::build(Kind::Operator, String::from("+"));
-    let sumright = Node::leaf(Token::build(Kind::Integer, String::from("5")));
-    let sumnode = Node::new(Some(plusnode), operator, Some(sumright));
-
-    assert_eq!("20", eval_tree(sumnode))
-}
-
-#[test]
-fn it_eval_unary_operations() {
-    // 2 -- 2
-    let rnode = Node::leaf(Token::build(Kind::Integer, String::from("2")));
-    let negative_op = Token::build(Kind::Operator, String::from("-"));
-    let unarynode = Node::unary(negative_op, rnode);
-
-    let operator = Token::build(Kind::Operator, String::from("-"));
-    let left = Node::leaf(Token::build(Kind::Integer, String::from("2")));
-    let sumnode = Node::new(Some(left), operator, Some(unarynode));
-
-    assert_eq!("4", eval_tree(sumnode))
 }
