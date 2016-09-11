@@ -1,6 +1,7 @@
 mod token;
 mod interpreter;
 mod ast;
+mod parser;
 
 use std::io::{self,BufRead};
 
@@ -10,7 +11,8 @@ fn main() {
         print!(">>");
         if let Ok(expr) = line {
             let tokenizer = token::Tokenizer::new(expr);
-            let mut iterpreter = interpreter::Interpreter::new(tokenizer);
+            let parser = parser::Parser::new(tokenizer);
+            let mut iterpreter = interpreter::Interpreter::new(parser);
             println!(">> {}", iterpreter.eval_tree());
             println!(">>");
         }
