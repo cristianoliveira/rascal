@@ -134,6 +134,7 @@ fn it_eval_tree_leaf() {
 
 #[test]
 fn it_eval_the_node_binary_operation() {
+    // 3+5
     let left = Node::leaf(Token::build(Kind::Integer, String::from("3")));
     let operator = Token::build(Kind::Operator, String::from("+"));
     let right = Node::leaf(Token::build(Kind::Integer, String::from("5")));
@@ -144,6 +145,7 @@ fn it_eval_the_node_binary_operation() {
 
 #[test]
 fn it_eval_complex_tree() {
+    // 5+5*3
     let left = Node::leaf(Token::build(Kind::Integer, String::from("3")));
     let operator = Token::build(Kind::Operator, String::from("*"));
     let right = Node::leaf(Token::build(Kind::Integer, String::from("5")));

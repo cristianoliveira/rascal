@@ -3,8 +3,8 @@ use ast;
 
 // # Parser
 //
-// Represents the parser that is responsible for parse
-// the stream of tokens from a given Tokenizer into a Abstracted Sintax Tree
+// Represents the parser that is responsible for parsing a stream of tokens
+// from a given Tokenizer into an Abstracted Sintax Tree
 pub struct Parser {
     tokenizer: Tokenizer,
     current: Option<Token>
@@ -36,7 +36,8 @@ impl Parser {
 
     // consume
     //
-    // It is responsible for consume the current Token
+    // It is responsible for consume the current Token validating the expected
+    // token for the expression sintax
     fn consume(&mut self, expected_kind: Kind) -> Token {
         if let Some(token) = self.current.clone() {
             self.current = None;
@@ -56,8 +57,8 @@ impl Parser {
 
     // factor
     //
-    // factor can be a terminal Integer or result of a grouped expr
-    // represented as context free grammar:
+    // factor can be a terminal Integer, result of a grouped expr
+    // or unary result of a factor. Represented as context free grammar:
     // ```
     //  factor:: (-|+) factor
     //  factor:: Integer
@@ -85,7 +86,7 @@ impl Parser {
     // term
     //
     // One term can be a `factor` or result of `factor * factor`
-    // or `factor / factor represented in context free grammar:
+    // or `factor / factor`. Represented in context free grammar:
     // ```
     // term:: factor
     // term:: factor (*|/) factor
@@ -109,7 +110,7 @@ impl Parser {
     // # expr
     //
     // One expr can be a `term` or result of `term + term` or `term - term`
-    // represented in context free grammar:
+    // Represented in context free grammar:
     // ```
     //   expr:: term
     //   expr:: term (+|-) term
