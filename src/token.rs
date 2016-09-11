@@ -7,8 +7,8 @@ pub enum Kind {
     Alphanum,
     Integer,
     Operator,
-    BlockBegin,
-    BlockEnd,
+    GroupBegin,
+    GroupEnd,
 
     // Statements
     Begin,
@@ -29,8 +29,8 @@ impl Kind {
             Some(value) => {
                 match value {
                     ';' => Kind::StatementEnd,
-                    '(' => Kind::BlockBegin,
-                    ')' => Kind::BlockEnd,
+                    '(' => Kind::GroupBegin,
+                    ')' => Kind::GroupEnd,
                     ' ' => Kind::Space,
                     '+'|'-'|'*'|'/'|'^' => Kind::Operator,
                     '0'|'1'|'2'|'3'|'4'|
@@ -42,6 +42,8 @@ impl Kind {
         }
     }
 
+    // reserved
+    // Retrieve a special kind for reserved keywords from a given string
     pub fn reserved(word: &String) -> Option<Kind> {
         match word.as_ref() {
             "BEGIN" => Some(Kind::Begin),
@@ -102,24 +104,24 @@ impl Iterator for Tokenizer {
             Kind::Operator =>
                 Some(Token::build(kind, format!("{}", current.unwrap()))),
             _ => {
-                let mut value = vec![current.unwrap()];
+                let mut chars = vec![current.unwrap()];
                 let mut next = self.text.chars().nth(self.position);
                 let mut kindnext = Kind::classify(&next);
 
                 while kindnext == kind {
-                    value.push(next.unwrap());
+                    chars.push(next.unwrap());
                     self.position += 1;
 
                     next = self.text.chars().nth(self.position);
                     kindnext = Kind::classify(&next);
 
-                    let word: String = value.clone().into_iter().collect();
+                    let word: String = chars.clone().into_iter().collect();
                     if let Some(reserved) = Kind::reserved(&word) {
                         return Some(Token{ kind: reserved, value: word });
                     }
                 }
 
-                Some(Token::build(kind, value.into_iter().collect()))
+                Some(Token::build(kind, chars.into_iter().collect()))
             }
         }
     }
@@ -241,7 +243,7 @@ fn it_acepts_grouped_expressions() {
     assert_eq!(
         tokens.next(),
         Some(Token {
-            kind: Kind::BlockBegin,
+            kind: Kind::GroupBegin,
             value: String::from("(")
         })
     );
@@ -255,7 +257,7 @@ fn it_acepts_grouped_expressions() {
     assert_eq!(
         tokens.next(),
         Some(Token {
-            kind: Kind::BlockEnd,
+            kind: Kind::GroupEnd,
             value: String::from(")")
         })
     );

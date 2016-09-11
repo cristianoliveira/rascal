@@ -69,10 +69,10 @@ impl Parser {
                 let token = self.consume(Kind::Operator);
                 ast::Node::unary(token, self.factor())
             },
-            Some(Token{ kind: Kind::BlockBegin , .. }) => {
-                self.consume(Kind::BlockBegin);
+            Some(Token{ kind: Kind::GroupBegin , .. }) => {
+                self.consume(Kind::GroupBegin);
                 let result = self.expr();
-                self.consume(Kind::BlockEnd);
+                self.consume(Kind::GroupEnd);
                 result
             },
             Some(Token{ kind: Kind::Integer, .. }) => {
