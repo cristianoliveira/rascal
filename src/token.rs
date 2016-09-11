@@ -3,10 +3,20 @@
 // Represents a type of a token
 #[derive(Debug, Clone, PartialEq)]
 pub enum Kind {
+    // expression
+    Alphanum,
     Integer,
     Operator,
     BlockBegin,
     BlockEnd,
+
+    // Statements
+    Begin,
+    End,
+    StatementEnd,
+    Assign,
+
+    // Others
     Space,
     EOF
 }
@@ -18,16 +28,26 @@ impl Kind {
         match *character {
             Some(value) => {
                 match value {
+                    ';' => Kind::StatementEnd,
                     '(' => Kind::BlockBegin,
                     ')' => Kind::BlockEnd,
                     ' ' => Kind::Space,
+                    '+'|'-'|'*'|'/'|'^' => Kind::Operator,
                     '0'|'1'|'2'|'3'|'4'|
                     '5'|'6'|'7'|'8'|'9' => Kind::Integer,
-                    '+'|'-'|'*'|'/'|'^' => Kind::Operator,
-                    _ => panic!("Character not supported {}", value)
+                    _ => Kind::Alphanum
                 }
             },
             None => Kind::EOF
+        }
+    }
+
+    pub fn reserved(word: &String) -> Option<Kind> {
+        match word.as_ref() {
+            "BEGIN" => Some(Kind::Begin),
+            "END" => Some(Kind::End),
+            ":=" => Some(Kind::Assign),
+            _ => None
         }
     }
 }
@@ -79,18 +99,23 @@ impl Iterator for Tokenizer {
         match kind {
             Kind::EOF => None,
             Kind::Space => self.next(),
+            Kind::Operator =>
+                Some(Token::build(kind, format!("{}", current.unwrap()))),
             _ => {
                 let mut value = vec![current.unwrap()];
+                let mut next = self.text.chars().nth(self.position);
+                let mut kindnext = Kind::classify(&next);
 
-                if kind == Kind::Integer {
-                    let mut next = self.text.chars().nth(self.position);
-                    let mut kindnext = Kind::classify(&next);
-                    while kindnext == kind {
-                        value.push(next.unwrap());
-                        self.position += 1;
+                while kindnext == kind {
+                    value.push(next.unwrap());
+                    self.position += 1;
 
-                        next = self.text.chars().nth(self.position);
-                        kindnext = Kind::classify(&next);
+                    next = self.text.chars().nth(self.position);
+                    kindnext = Kind::classify(&next);
+
+                    let word: String = value.clone().into_iter().collect();
+                    if let Some(reserved) = Kind::reserved(&word) {
+                        return Some(Token{ kind: reserved, value: word });
                     }
                 }
 
@@ -98,6 +123,7 @@ impl Iterator for Tokenizer {
             }
         }
     }
+
 }
 
 pub fn binary_operation(first: &Token, operator: &Token, second: &Token) -> i32 {
@@ -233,4 +259,23 @@ fn it_acepts_grouped_expressions() {
             value: String::from(")")
         })
     );
+}
+
+#[test]
+fn it_accepts_statements() {
+    let text = "BEGIN x := 1; END";
+    let mut tokens = Tokenizer::new(String::from(text));
+
+    assert_eq!(tokens.next(), Some(Token { kind: Kind::Begin,
+                                           value: String::from("BEGIN")}));
+    assert_eq!(tokens.next(), Some(Token { kind: Kind::Alphanum,
+                                           value: String::from("x")}));
+    assert_eq!(tokens.next(), Some(Token { kind: Kind::Assign,
+                                           value: String::from(":=")}));
+    assert_eq!(tokens.next(), Some(Token { kind: Kind::Integer,
+                                           value: String::from("1")}));
+    assert_eq!(tokens.next(), Some(Token { kind: Kind::StatementEnd,
+                                           value: String::from(";") }));
+    assert_eq!(tokens.next(), Some(Token { kind: Kind::End,
+                                           value: String::from("END") }));
 }
