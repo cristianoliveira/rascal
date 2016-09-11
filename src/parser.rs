@@ -301,7 +301,7 @@ fn it_parses_respecting_parentesis_precedence() {
 
 #[test]
 fn it_parses_simple_block() {
-    let text = "begin x := 10+5 end";
+    let text = "begin x = 10+5 end";
     let tokenizer = Tokenizer::new(String::from(text));
     let mut parser = Parser::new(tokenizer);
 
@@ -310,7 +310,7 @@ fn it_parses_simple_block() {
                                  String::from("5"));
 
     let var = ast::Node::leaf(Token{ kind: Kind::ID, value: String::from("x")});
-    let assign_token = Token{ kind: Kind::Assign, value: String::from(":=")};
+    let assign_token = Token{ kind: Kind::Assign, value: String::from("=")};
     let assign = ast::Node::new(var, assign_token, expr);
 
     let comp = ast::Node::compound(vec![assign]);
@@ -319,10 +319,10 @@ fn it_parses_simple_block() {
 
 #[test]
 fn it_parses_multiple_statements() {
-    let text = "begin x := 10+5; y := 100 end";
+    let text = "begin x = 10+5; y = 100 end";
     let tokenizer = Tokenizer::new(String::from(text));
     let mut parser = Parser::new(tokenizer);
-    let assign_token = Token{ kind: Kind::Assign, value: String::from(":=")};
+    let assign_token = Token{ kind: Kind::Assign, value: String::from("=")};
 
 
     let yvar = ast::Node::leaf(Token{ kind: Kind::ID, value: String::from("y")});

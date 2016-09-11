@@ -54,7 +54,7 @@ impl Kind {
         match word.as_ref() {
             "begin" => Some(Kind::Begin),
             "end" => Some(Kind::End),
-            ":=" => Some(Kind::Assign),
+            "=" => Some(Kind::Assign),
             "print" => Some(Kind::StdOut),
             "return" => Some(Kind::Return),
             _ => None
@@ -268,7 +268,7 @@ fn it_acepts_grouped_expressions() {
 
 #[test]
 fn it_accepts_statements() {
-    let text = "begin x := 1; end";
+    let text = "begin x = 1; end";
     let mut tokens = Tokenizer::new(String::from(text));
 
     assert_eq!(tokens.next(), Some(Token { kind: Kind::Begin,
@@ -276,7 +276,7 @@ fn it_accepts_statements() {
     assert_eq!(tokens.next(), Some(Token { kind: Kind::ID,
                                            value: String::from("x")}));
     assert_eq!(tokens.next(), Some(Token { kind: Kind::Assign,
-                                           value: String::from(":=")}));
+                                           value: String::from("=")}));
     assert_eq!(tokens.next(), Some(Token { kind: Kind::Integer,
                                            value: String::from("1")}));
     assert_eq!(tokens.next(), Some(Token { kind: Kind::StatementEnd,

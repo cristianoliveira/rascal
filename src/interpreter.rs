@@ -243,7 +243,7 @@ fn it_accept_unary_operations() {
 
 #[test]
 fn it_eval_block_assigning_vars_to_symbol_table() {
-    let text = "begin x := 10 end";
+    let text = "begin x = 10 end";
     let tokenizer = Tokenizer::new(String::from(text));
     let mut parser = Parser::new(tokenizer);
     let mut interpreter = Interpreter::new();
@@ -254,7 +254,7 @@ fn it_eval_block_assigning_vars_to_symbol_table() {
 
 #[test]
 fn it_eval_block_retrieve_vars_from_symbol_table() {
-    let text = "begin x := 10; y := x + 5 end";
+    let text = "begin x = 10; y = x + 5 end";
     let tokenizer = Tokenizer::new(String::from(text));
     let mut parser = Parser::new(tokenizer);
     let mut interpreter = Interpreter::new();
@@ -264,8 +264,8 @@ fn it_eval_block_retrieve_vars_from_symbol_table() {
 }
 
 #[test]
-fn it_eval_block_retrieve_return_statement() {
-    let text = "begin x := 10; y := x + 5; return y + 5 end";
+fn it_eval_block_retrieve_eturn_statement() {
+    let text = "begin x = 10; y = x + 5; return y + 5 end";
     let tokenizer = Tokenizer::new(String::from(text));
     let mut parser = Parser::new(tokenizer);
     let mut interpreter = Interpreter::new();
