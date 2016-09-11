@@ -70,12 +70,18 @@ impl Interpreter {
 
             (None, None) => {
                 if let Some(statements) = tree.statements {
-                    statements.iter().map(|n| self.eval_tree(n.clone()))
+                    return statements.iter()
+                              .map(|n| self.eval_tree(n.clone()))
                               .fold(String::new(), |mut res, s|{
                                   s
                               })
-                } else {
-                    tree.value()
+                }
+
+                match tree.clone().kind() {
+                    Kind::ID => {
+                        self.symbol_table[&tree.value()].clone()
+                    },
+                    _ => tree.value()
                 }
             }
         }
@@ -242,4 +248,15 @@ fn it_eval_block_assigning_vars_to_symbol_table() {
     let _ = interpreter.eval_tree(parser.parse());
 
     assert_eq!("10", interpreter.symbol_table["x"]);
+}
+
+#[test]
+fn it_eval_block_retrieve_vars_from_symbol_table() {
+    let text = "BEGIN x := 10; y := x + 5 END";
+    let tokenizer = Tokenizer::new(String::from(text));
+    let mut parser = Parser::new(tokenizer);
+    let mut interpreter = Interpreter::new();
+    let result = interpreter.eval_tree(parser.parse());
+
+    assert_eq!("15", interpreter.symbol_table["y"]);
 }

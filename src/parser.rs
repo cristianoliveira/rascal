@@ -112,7 +112,6 @@ impl Parser {
     //   assign_statement: variable ASSIGN expr
     // ```
     fn assign_statement(&mut self) -> ast::Node {
-        println!("assign_statement: {:?}", self.next().get());
         ast::Node::new(self.variable(),
                        self.next().consume(Kind::Assign),
                        self.expr())
