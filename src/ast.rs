@@ -58,4 +58,20 @@ impl Node {
     pub fn nodes(self) -> (Option<Node>, Option<Node>) {
         (*self.left, *self.right)
     }
+
+    pub fn is_compoud(self) -> bool {
+        self.statements.is_some()
+    }
+
+    pub fn is_assign(self) -> bool {
+        self.token.kind == Kind::Assign
+    }
+
+    pub fn value(self) -> String {
+        self.token.value
+    }
+
+    pub fn kind(self) -> Kind {
+        self.token.kind
+    }
 }
