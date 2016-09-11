@@ -11,48 +11,23 @@ pub struct Parser {
 }
 
 impl Parser {
-    pub fn new(text: Tokenizer) -> Self {
+    pub fn new(lexer: Tokenizer) -> Self {
         Parser {
-            tokenizer: text,
+            tokenizer: lexer,
             current: None
         }
     }
 
-    // next
-    //
-    // It store the next token from Tokenizer and return itself for
-    // chaining porpouses
+    // tokenizer aliases
     fn next(&mut self) -> &mut Self {
-        if self.current.is_none() { self.current = self.tokenizer.next() }
+        self.tokenizer.advance();
         self
     }
-
-    // get
-    //
-    // It gets the current token without consuming it
     fn get(&mut self) -> Option<Token> {
-        self.current.clone()
+        self.tokenizer.get()
     }
-
-    // consume
-    //
-    // It is responsible for consume the current Token validating the expected
-    // token for the expression sintax
     fn consume(&mut self, expected_kind: Kind) -> Token {
-        if let Some(token) = self.current.clone() {
-            self.current = None;
-            if token.kind != expected_kind {
-                panic!(
-                    "Sintax error: expected token kind {:?} found {:?} at position {}",
-                    expected_kind,
-                    token,
-                    self.tokenizer.position
-                    )
-            }
-            return token;
-        } else {
-            panic!("Interpreter error: unexpected end of file");
-        }
+        self.tokenizer.consume(expected_kind)
     }
 
     // compound

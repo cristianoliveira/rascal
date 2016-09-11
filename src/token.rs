@@ -10,13 +10,16 @@ pub enum Kind {
     GroupBegin,
     GroupEnd,
 
-    // Statements
+    // Reserved
     Begin,
     End,
     Statement,
     StatementEnd,
     Assign,
     ID,
+    Comparation,
+    True,
+    False,
 
     // 
     StdOut,
@@ -57,6 +60,9 @@ impl Kind {
             "=" => Some(Kind::Assign),
             "print" => Some(Kind::StdOut),
             "return" => Some(Kind::Return),
+            "=="|"!=" => Some(Kind::Comparation),
+            "true" => Some(Kind::True),
+            "false" => Some(Kind::False),
             _ => None
         }
     }
@@ -82,23 +88,67 @@ impl Token {
 #[derive(Clone)]
 pub struct Tokenizer {
     pub text: String,
-    pub position: usize
+    pub position: usize,
+    current: Option<Token>
 }
 
 impl Tokenizer {
     pub fn new(text: String) -> Self {
         Tokenizer {
             text: text,
-            position: 0
+            position: 0,
+            current: None
         }
     }
 }
 
+impl Tokenizer {
+    pub fn current(&self) -> Option<char> {
+        self.text.chars().nth(self.position)
+    }
+
+    // next
+    //
+    // It store the next token from Tokenizer and return itself for
+    // chaining porpouses
+    pub fn advance(&mut self) -> &mut Self {
+        if self.current.is_none() { self.current = self.next() }
+        self
+    }
+
+    // get
+    //
+    // It gets the current token without consuming it
+    pub fn get(&mut self) -> Option<Token> {
+        self.current.clone()
+    }
+
+    // consume
+    //
+    // It is responsible for consume the current Token validating the expected
+    // token for the expression sintax
+    pub fn consume(&mut self, expected_kind: Kind) -> Token {
+        if let Some(token) = self.current.clone() {
+            self.current = None;
+            if token.kind != expected_kind {
+                panic!(
+                    "Sintax error: expected token kind {:?} found {:?} at position {}",
+                    expected_kind,
+                    token,
+                    self.position
+                    )
+            }
+            return token;
+        } else {
+            panic!("Interpreter error: unexpected end of file");
+        }
+    }
+}
 impl Iterator for Tokenizer {
     type Item = Token;
 
     fn next(&mut self) -> Option<Token> {
-        let current = self.text.chars().nth(self.position);
+        let current = self.current();
         let kind = Kind::classify(&current);
 
         self.position += 1;
@@ -112,13 +162,13 @@ impl Iterator for Tokenizer {
 
             Kind::Alphanum => {
                 let mut chars = vec![current.unwrap()];
-                let mut next = self.text.chars().nth(self.position);
+                let mut next = self.current();
                 let mut kindnext = Kind::classify(&next);
 
                 while kindnext == kind || kindnext == Kind::Integer {
                     chars.push(next.unwrap());
                     self.position += 1;
-                    next = self.text.chars().nth(self.position);
+                    next = self.current();
                     kindnext = Kind::classify(&next);
                 }
 
@@ -132,14 +182,14 @@ impl Iterator for Tokenizer {
 
             _ => {
                 let mut chars = vec![current.unwrap()];
-                let mut next = self.text.chars().nth(self.position);
+                let mut next = self.current();
                 let mut kindnext = Kind::classify(&next);
 
                 while kindnext == kind {
                     chars.push(next.unwrap());
                     self.position += 1;
 
-                    next = self.text.chars().nth(self.position);
+                    next = self.current();
                     kindnext = Kind::classify(&next);
                 }
 
@@ -147,7 +197,6 @@ impl Iterator for Tokenizer {
             }
         }
     }
-
 }
 
 #[test]
