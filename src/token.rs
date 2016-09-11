@@ -18,6 +18,10 @@ pub enum Kind {
     Assign,
     ID,
 
+    // 
+    StdOut,
+    Return,
+
     // Others
     Space,
     EOF
@@ -48,9 +52,11 @@ impl Kind {
     // Retrieve a special kind for reserved keywords from a given string
     pub fn reserved(word: &String) -> Option<Kind> {
         match word.as_ref() {
-            "BEGIN" => Some(Kind::Begin),
-            "END" => Some(Kind::End),
+            "begin" => Some(Kind::Begin),
+            "end" => Some(Kind::End),
             ":=" => Some(Kind::Assign),
+            "print" => Some(Kind::StdOut),
+            "return" => Some(Kind::Return),
             _ => None
         }
     }
@@ -262,11 +268,11 @@ fn it_acepts_grouped_expressions() {
 
 #[test]
 fn it_accepts_statements() {
-    let text = "BEGIN x := 1; END";
+    let text = "begin x := 1; end";
     let mut tokens = Tokenizer::new(String::from(text));
 
     assert_eq!(tokens.next(), Some(Token { kind: Kind::Begin,
-                                           value: String::from("BEGIN")}));
+                                           value: String::from("begin")}));
     assert_eq!(tokens.next(), Some(Token { kind: Kind::ID,
                                            value: String::from("x")}));
     assert_eq!(tokens.next(), Some(Token { kind: Kind::Assign,
@@ -276,5 +282,5 @@ fn it_accepts_statements() {
     assert_eq!(tokens.next(), Some(Token { kind: Kind::StatementEnd,
                                            value: String::from(";") }));
     assert_eq!(tokens.next(), Some(Token { kind: Kind::End,
-                                           value: String::from("END") }));
+                                           value: String::from("end") }));
 }

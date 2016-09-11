@@ -294,7 +294,7 @@ fn it_parses_respecting_parentesis_precedence() {
 
 #[test]
 fn it_parses_simple_block() {
-    let text = "BEGIN x := 10+5 END";
+    let text = "begin x := 10+5 end";
     let tokenizer = Tokenizer::new(String::from(text));
     let mut parser = Parser::new(tokenizer);
 
@@ -312,7 +312,7 @@ fn it_parses_simple_block() {
 
 #[test]
 fn it_parses_multiple_statements() {
-    let text = "BEGIN x := 10+5; y := 100 END";
+    let text = "begin x := 10+5; y := 100 end";
     let tokenizer = Tokenizer::new(String::from(text));
     let mut parser = Parser::new(tokenizer);
     let assign_token = Token{ kind: Kind::Assign, value: String::from(":=")};
