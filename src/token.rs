@@ -81,15 +81,17 @@ impl Iterator for Tokenizer {
             Kind::Space => self.next(),
             _ => {
                 let mut value = vec![current.unwrap()];
-                let mut next = self.text.chars().nth(self.position);
-                let mut kindnext = Kind::classify(&next);
 
-                while kindnext == kind {
-                    value.push(next.unwrap());
-                    self.position += 1;
+                if kind == Kind::Integer {
+                    let mut next = self.text.chars().nth(self.position);
+                    let mut kindnext = Kind::classify(&next);
+                    while kindnext == kind {
+                        value.push(next.unwrap());
+                        self.position += 1;
 
-                    next = self.text.chars().nth(self.position);
-                    kindnext = Kind::classify(&next);
+                        next = self.text.chars().nth(self.position);
+                        kindnext = Kind::classify(&next);
+                    }
                 }
 
                 Some(Token::build(kind, value.into_iter().collect()))

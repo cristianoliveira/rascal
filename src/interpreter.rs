@@ -91,3 +91,13 @@ fn it_respects_grouped_expression() {
 
     assert_eq!("10", interpreter.eval_tree());
 }
+
+#[test]
+fn it_accept_unary_operations() {
+    let text = "(4+-1)--2";
+    let tokenizer = token::Tokenizer::new(String::from(text));
+    let parser = Parser::new(tokenizer);
+    let mut interpreter = Interpreter::new(parser);
+
+    assert_eq!("5", interpreter.eval_tree());
+}

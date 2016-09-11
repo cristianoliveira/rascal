@@ -59,11 +59,16 @@ impl Parser {
     // factor can be a terminal Integer or result of a grouped expr
     // represented as context free grammar:
     // ```
+    //  factor:: (-|+) factor
     //  factor:: Integer
     //  factor:: ( expr )
     // ```
     fn factor(&mut self) -> ast::Node {
         match self.next().get() {
+            Some(Token{ kind: Kind::Operator, .. }) => {
+                let token = self.consume(Kind::Operator);
+                ast::Node::unary(token, self.factor())
+            },
             Some(Token{ kind: Kind::BlockBegin , .. }) => {
                 self.consume(Kind::BlockBegin);
                 let result = self.expr();

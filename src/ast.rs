@@ -10,7 +10,7 @@ use token::{Token, Kind};
 pub struct Node{
     pub token: Token,
     left: Box<Option<Node>>,
-    right: Box<Option<Node>>
+    right: Box<Option<Node>>,
 }
 
 impl Node {
@@ -18,14 +18,21 @@ impl Node {
         Node {
             left: Box::new(left),
             token: token,
-            right: Box::new(right)
+            right: Box::new(right),
         }
     }
     pub fn leaf(token: Token) -> Self {
         Node {
             left: Box::new(None),
             token: token,
-            right: Box::new(None)
+            right: Box::new(None),
+        }
+    }
+    pub fn unary(token: Token, node: Node) -> Self {
+        Node {
+            left: Box::new(None),
+            token: token,
+            right: Box::new(Some(node)),
         }
     }
     pub fn nodes(self) -> (Option<Node>, Option<Node>) {
@@ -67,7 +74,11 @@ pub fn eval_tree(node: Node) -> String {
                 rresult).to_string()
         },
         (Some(lnode), None) => eval_tree(lnode),
-        (None, Some(rnode)) => eval_tree(rnode),
+        (None, Some(rnode)) => match token {
+            Token{ kind: Kind::Operator, .. } =>
+                unary_operation(token.value, eval_tree(rnode)).to_string(),
+                _ => eval_tree(rnode)
+        },
         (None, None) => token.value
     }
 }
@@ -87,6 +98,15 @@ pub fn reverse_polish_notation(node: Node) -> Vec<String> {
         (Some(lnode), None) => reverse_polish_notation(lnode),
         (None, Some(rnode)) => reverse_polish_notation(rnode),
         (None, None) => vec![token.value]
+    }
+}
+
+fn unary_operation(operator: String, operand: String) -> i32 {
+    let ioperand = operand.parse::<i32>().unwrap();
+    match operator.as_ref() {
+        "+" => ioperand,
+        "-" => -(ioperand),
+        _ => panic!("Sintax error: invalid unary operator {}", operator)
     }
 }
 
@@ -134,4 +154,18 @@ fn it_eval_complex_tree() {
     let sumnode = Node::new(Some(plusnode), operator, Some(sumright));
 
     assert_eq!("20", eval_tree(sumnode))
+}
+
+#[test]
+fn it_eval_unary_operations() {
+    // 2 -- 2
+    let rnode = Node::leaf(Token::build(Kind::Integer, String::from("2")));
+    let negative_op = Token::build(Kind::Operator, String::from("-"));
+    let unarynode = Node::unary(negative_op, rnode);
+
+    let operator = Token::build(Kind::Operator, String::from("-"));
+    let left = Node::leaf(Token::build(Kind::Integer, String::from("2")));
+    let sumnode = Node::new(Some(left), operator, Some(unarynode));
+
+    assert_eq!("4", eval_tree(sumnode))
 }
