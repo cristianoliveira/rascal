@@ -139,7 +139,7 @@ impl Parser {
     // unary result of a factor or a var. Represented as context free grammar:
     // ```
     //  factor:: (-|+) factor
-    //  factor:: (==|!=) factor
+    //  factor:: (==|!=|>|<) factor
     //  factor:: INTEGER
     //  factor:: BOLEAN
     //  factor:: ( expr )
@@ -195,7 +195,7 @@ impl Parser {
                                           self.tokenizer.consume(Kind::Operator),
                                           self.factor())
                 },
-                "==" | "!=" => {
+                "==" | "!=" | ">" | "<" => {
                     return ast::Node::new(result.clone(),
                                           self.tokenizer.consume(Kind::Comparison),
                                           self.factor())
@@ -386,4 +386,27 @@ fn it_parses_bolean_expression() {
     let expected = ast::Node::new(rnode, token, comparison);
     assert_eq!(expected, parser.parse());
 }
+
+#[test]
+fn it_parses_expressions_gt_lt() {
+    let text = "1 > 2 or 1 < 2";
+    let tokenizer = Tokenizer::new(String::from(text));
+    let mut parser = Parser::new(tokenizer);
+
+    let lcompar = ast::Node::leaf(Token::build(Kind::Integer, String::from("1")));
+    let tkcompar = Token::build(Kind::Comparison, String::from(">"));
+    let rcompar = ast::Node::leaf(Token::build(Kind::Integer, String::from("2")));
+    let lnode = ast::Node::new(lcompar, tkcompar, rcompar);
+
+    let token = Token::build(Kind::Comparison, String::from("or"));
+
+    let lcompar2 = ast::Node::leaf(Token::build(Kind::Integer, String::from("1")));
+    let tkcompa2 = Token::build(Kind::Comparison, String::from("<"));
+    let rcompar2 = ast::Node::leaf(Token::build(Kind::Integer, String::from("2")));
+    let rnode = ast::Node::new(lcompar2, tkcompa2, rcompar2);
+
+    let expected = ast::Node::new(lnode, token, rnode);
+    assert_eq!(expected, parser.parse());
+}
+
 

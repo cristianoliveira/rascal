@@ -309,7 +309,7 @@ fn it_accept_binary_comparison() {
 
 #[test]
 fn it_accept_composed_binary_comparison() {
-    let text = "2 == 2 and 3 != 3";
+    let text = "1 > 1 or 2 == 2 and 3 != 3";
     let tokenizer = Tokenizer::new(String::from(text));
     let mut parser = Parser::new(tokenizer);
 
@@ -363,11 +363,11 @@ fn it_eval_block_bolean_block() {
 
 #[test]
 fn it_eval_while_blocks() {
-    let text = "begin  y = 0; while y != 4 begin y = y + 1 end; return y == 0 end";
+    let text = "begin  y = 0; while y < 4 begin y = y + 1 end; return y == 4 end";
     let tokenizer = Tokenizer::new(String::from(text));
     let mut parser = Parser::new(tokenizer);
     let mut interpreter = Interpreter::new();
     let result = interpreter.eval_tree(parser.parse());
 
-    assert_eq!("false", result);
+    assert_eq!("true", result);
 }

@@ -61,9 +61,11 @@ impl Kind {
             "=" => Some(Kind::Assign),
             "print" => Some(Kind::StdOut),
             "return" => Some(Kind::Return),
-            "or"|"||"|"and"|"&&"|"=="|"!=" => Some(Kind::Comparison),
-            "true"|"false" => Some(Kind::Bolean),
             "while" => Some(Kind::While),
+            "true"|"false" => Some(Kind::Bolean),
+            "or"|"||"|
+            "and"|"&&"|
+            "=="|"!="|">"|"<" => Some(Kind::Comparison),
             _ => None
         }
     }
