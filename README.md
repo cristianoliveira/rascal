@@ -10,7 +10,7 @@ This language is based on Pascal/Ruby and follow its structure.
   * Comparison: `==`,`!=`, `and`, `or`
   * Statement end: `;`
   * Return expression: `return`
-  * Loop: `while condition == true begin .. end`
+  * Loop: `while 1==1 begin .. end`
 
 Each statement requires a `;` unless the last statement. Example of runnable code:
 Integers
@@ -42,20 +42,20 @@ Loops
 begin
   y = 0;
 
-  while y != 4 begin
+  while y < 4 begin
     y = y + 1
   end;
 
   return y == 4;
 end
 ```
-Result: false
+Result: true
 
 ## Future implementations
+  * Imutable default: All vars are imutable by default `let`
+  * Mutable explicit: explicity say when var is mutable `mut`
   * Strings: support for strings
   * String comparison: support for compare strings
-  * Boolean: evaluate booleans - DONE
-  * Loops: `while` condition repeat statement - DONE
   * Conditional: Evaluate conditional `if` `else` blocks
   * Print: prints on stdout the given expression
   * Return: return in the middle of a block
