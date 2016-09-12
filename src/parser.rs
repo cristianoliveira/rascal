@@ -5,6 +5,26 @@ use ast;
 //
 // Represents the parser that is responsible for parsing a stream of tokens
 // from a given Tokenizer into an Abstracted Sintax Tree
+//
+// Context free grammar for this language:
+//```
+//   expr:: term
+//   expr:: term (+|-) term
+//   expr:: term (OR) term
+//
+//   term:: factor
+//   term:: factor (*|/) factor
+//   term:: factor (AND) factor
+//
+//   factor:: (-|+) factor
+//   factor:: (==|!=) factor
+//   factor:: ( expr )
+//   factor:: INTEGER
+//   factor:: BOOLEAN
+//   factor:: variable
+//
+//   variable:: ID
+//```
 pub struct Parser {
     tokenizer: Tokenizer,
 }
@@ -102,7 +122,9 @@ impl Parser {
     // unary result of a factor or a var. Represented as context free grammar:
     // ```
     //  factor:: (-|+) factor
-    //  factor:: Integer
+    //  factor:: (==|!=) factor
+    //  factor:: INTEGER
+    //  factor:: BOLEAN
     //  factor:: ( expr )
     //  factor:: variable
     // ```
@@ -123,6 +145,10 @@ impl Parser {
                 ast::Node::leaf(self.tokenizer.advance().consume(Kind::Integer))
             },
 
+            Some(Token{ kind: Kind::Bolean, .. }) => {
+                ast::Node::leaf(self.tokenizer.advance().consume(Kind::Bolean))
+            },
+
             Some(Token{ kind: Kind::ID, .. }) => {
                 self.variable()
             },
@@ -140,6 +166,7 @@ impl Parser {
     // ```
     // term:: factor
     // term:: factor (*|/) factor
+    // term:: factor (!== | ==) factor
     // ```
     fn term(&mut self) -> ast::Node {
         let result = self.factor();
@@ -149,7 +176,12 @@ impl Parser {
                 "*" | "/" => {
                     return ast::Node::new(result.clone(),
                                           self.tokenizer.consume(Kind::Operator),
-                                          self.factor());
+                                          self.factor())
+                },
+                "==" | "!=" => {
+                    return ast::Node::new(result.clone(),
+                                          self.tokenizer.consume(Kind::Comparison),
+                                          self.factor())
                 },
                 _ => ()
             };
@@ -164,6 +196,7 @@ impl Parser {
     // ```
     //   expr:: term
     //   expr:: term (+|-) term
+    //   expr:: term (OR|AND) term
     // ```
     pub fn expr(&mut self) -> ast::Node {
         let mut result = self.term();
@@ -173,6 +206,11 @@ impl Parser {
                 "+" | "-" => {
                     result = ast::Node::new(result.clone(),
                                             self.tokenizer.consume(Kind::Operator),
+                                            self.term())
+                },
+                "and"|"&&"|"or" | "||" => {
+                    result = ast::Node::new(result.clone(),
+                                            self.tokenizer.consume(Kind::Comparison),
                                             self.term())
                 },
                 _ => break
@@ -299,3 +337,36 @@ fn it_parses_multiple_statements() {
     let comp = ast::Node::compound(vec![xassign, yassign]);
     assert_eq!(comp, parser.parse());
 }
+
+#[test]
+fn it_parses_bolean_comparison() {
+    let text = "true == false";
+    let tokenizer = Tokenizer::new(String::from(text));
+    let mut parser = Parser::new(tokenizer);
+
+    let lcompar = ast::Node::leaf(Token::build(Kind::Bolean, String::from("true")));
+    let rcompar = ast::Node::leaf(Token::build(Kind::Bolean, String::from("false")));
+    let tkcompar = Token::build(Kind::Comparison, String::from("=="));
+    let comparison = ast::Node::new(lcompar, tkcompar, rcompar);
+
+    assert_eq!(comparison, parser.parse());
+}
+
+#[test]
+fn it_parses_bolean_expression() {
+    let text = "true and true == false";
+    let tokenizer = Tokenizer::new(String::from(text));
+    let mut parser = Parser::new(tokenizer);
+
+    let lcompar = ast::Node::leaf(Token::build(Kind::Bolean, String::from("true")));
+    let rcompar = ast::Node::leaf(Token::build(Kind::Bolean, String::from("false")));
+    let tkcompar = Token::build(Kind::Comparison, String::from("=="));
+    let comparison = ast::Node::new(lcompar, tkcompar, rcompar);
+
+    let token = Token::build(Kind::Comparison, String::from("and"));
+    let rnode = ast::Node::leaf(Token::build(Kind::Bolean, String::from("true")));
+
+    let expected = ast::Node::new(rnode, token, comparison);
+    assert_eq!(expected, parser.parse());
+}
+

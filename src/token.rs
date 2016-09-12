@@ -10,6 +10,10 @@ pub enum Kind {
     GroupBegin,
     GroupEnd,
 
+    // Bolean
+    Comparison,
+    Bolean,
+
     // Reserved
     Begin,
     End,
@@ -17,11 +21,6 @@ pub enum Kind {
     StatementEnd,
     Assign,
     ID,
-    Comparation,
-    True,
-    False,
-
-    // 
     StdOut,
     Return,
 
@@ -60,9 +59,8 @@ impl Kind {
             "=" => Some(Kind::Assign),
             "print" => Some(Kind::StdOut),
             "return" => Some(Kind::Return),
-            "=="|"!=" => Some(Kind::Comparation),
-            "true" => Some(Kind::True),
-            "false" => Some(Kind::False),
+            "or"|"||"|"and"|"&&"|"=="|"!=" => Some(Kind::Comparison),
+            "true"|"false" => Some(Kind::Bolean),
             _ => None
         }
     }
@@ -206,29 +204,17 @@ fn it_generate_tokens() {
 
     assert_eq!(
         tokens.next(),
-        Some(Token {
-            kind: Kind::Integer,
-            value: String::from("5")
-        })
+        Some(Token { kind: Kind::Integer, value: String::from("5") })
     );
     assert_eq!(
         tokens.next(),
-        Some(Token {
-            kind: Kind::Operator,
-            value: String::from("+")
-        })
+        Some(Token { kind: Kind::Operator, value: String::from("+") })
     );
     assert_eq!(
         tokens.next(),
-        Some(Token {
-            kind: Kind::Integer,
-            value: String::from("1")
-        })
+        Some(Token { kind: Kind::Integer, value: String::from("1") })
     );
-    assert_eq!(
-        tokens.next(),
-        None
-    );
+    assert_eq!( tokens.next(), None);
 }
 
 #[test]
@@ -238,24 +224,15 @@ fn it_ignores_empty_spaces() {
 
     assert_eq!(
         tokens.next().unwrap(),
-        Token {
-            kind: Kind::Integer,
-            value: String::from("5")
-        }
+        Token { kind: Kind::Integer, value: String::from("5") }
     );
     assert_eq!(
         tokens.next().unwrap(),
-        Token {
-            kind: Kind::Operator,
-            value: String::from("+")
-        }
+        Token { kind: Kind::Operator, value: String::from("+") }
     );
     assert_eq!(
         tokens.next().unwrap(),
-        Token {
-            kind: Kind::Integer,
-            value: String::from("1")
-        }
+        Token { kind: Kind::Integer, value: String::from("1") }
     );
 }
 
@@ -266,24 +243,15 @@ fn it_acepts_high_numbers() {
 
     assert_eq!(
         tokens.next(),
-        Some(Token {
-            kind: Kind::Integer,
-            value: String::from("21")
-        })
+        Some(Token { kind: Kind::Integer, value: String::from("21") })
     );
     assert_eq!(
         tokens.next(),
-        Some(Token {
-            kind: Kind::Operator,
-            value: String::from("+")
-        })
+        Some(Token { kind: Kind::Operator, value: String::from("+") })
     );
     assert_eq!(
         tokens.next(),
-        Some(Token {
-            kind: Kind::Integer,
-            value: String::from("1102")
-        })
+        Some(Token { kind: Kind::Integer, value: String::from("1102") })
     );
 }
 
@@ -294,24 +262,15 @@ fn it_acepts_grouped_expressions() {
 
     assert_eq!(
         tokens.next(),
-        Some(Token {
-            kind: Kind::GroupBegin,
-            value: String::from("(")
-        })
+        Some(Token { kind: Kind::GroupBegin, value: String::from("(") })
     );
     assert_eq!(
         tokens.next(),
-        Some(Token {
-            kind: Kind::Integer,
-            value: String::from("1")
-        })
+        Some(Token { kind: Kind::Integer, value: String::from("1") })
     );
     assert_eq!(
         tokens.next(),
-        Some(Token {
-            kind: Kind::GroupEnd,
-            value: String::from(")")
-        })
+        Some(Token { kind: Kind::GroupEnd, value: String::from(")") })
     );
 }
 
@@ -332,4 +291,67 @@ fn it_accepts_statements() {
                                            value: String::from(";") }));
     assert_eq!(tokens.next(), Some(Token { kind: Kind::End,
                                            value: String::from("end") }));
+}
+
+#[test]
+fn it_accepts_comparison_tokens() {
+    let text = "true == false";
+    let mut tokens = Tokenizer::new(String::from(text));
+
+    assert_eq!(
+        tokens.next(),
+        Some(Token { kind: Kind::Bolean, value: String::from("true") })
+    );
+    assert_eq!(
+        tokens.next(),
+        Some(Token { kind: Kind::Comparison, value: String::from("==") })
+    );
+    assert_eq!(
+        tokens.next(),
+        Some(Token { kind: Kind::Bolean, value: String::from("false") })
+    );
+    assert_eq!( tokens.next(), None);
+}
+
+#[test]
+fn it_accepts_complex_comparison_tokens() {
+    let text = "true == false and true or false != false";
+    let mut tokens = Tokenizer::new(String::from(text));
+
+    assert_eq!(
+        tokens.next(),
+        Some(Token { kind: Kind::Bolean, value: String::from("true") })
+    );
+    assert_eq!(
+        tokens.next(),
+        Some(Token { kind: Kind::Comparison, value: String::from("==") })
+    );
+    assert_eq!(
+        tokens.next(),
+        Some(Token { kind: Kind::Bolean, value: String::from("false") })
+    );
+    assert_eq!(
+        tokens.next(),
+        Some(Token { kind: Kind::Comparison, value: String::from("and") })
+    );
+    assert_eq!(
+        tokens.next(),
+        Some(Token { kind: Kind::Bolean, value: String::from("true") })
+    );
+    assert_eq!(
+        tokens.next(),
+        Some(Token { kind: Kind::Comparison, value: String::from("or") })
+    );
+    assert_eq!(
+        tokens.next(),
+        Some(Token { kind: Kind::Bolean, value: String::from("false") })
+    );
+    assert_eq!(
+        tokens.next(),
+        Some(Token { kind: Kind::Comparison, value: String::from("!=") })
+    );
+    assert_eq!(
+        tokens.next(),
+        Some(Token { kind: Kind::Bolean, value: String::from("false") })
+    );
 }

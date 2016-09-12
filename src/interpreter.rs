@@ -49,6 +49,11 @@ impl Interpreter {
                                      &tree.value(),
                                      self.eval_tree(rnode)),
 
+                Kind::Comparison =>
+                    binary_comparison(self.eval_tree(lnode),
+                                      &tree.value(),
+                                      self.eval_tree(rnode)),
+
                 Kind::Assign => {
                     let value = self.eval_tree(rnode);
                     self.assign_variable(lnode.value(), value)
@@ -122,6 +127,32 @@ fn binary_operation(left: String, operator: &String, right: String) -> String {
         "-" => operleft - operright,
         "*" => operleft * operright,
         "/" => operleft / operright,
+        _ => panic!("Sintax error: invalid operator {}", operator)
+    };
+
+    result.to_string()
+}
+
+// binary_operation
+// Resolve binary expression for the given left, operator and right operand
+fn binary_comparison(left: String, operator: &String, right: String) -> String {
+    let bleft = left.replace("true","1").replace("false","0");
+    let bright = right.replace("true","1").replace("false","0");
+
+    let operleft = if let Ok(val) = bleft.parse::<i32>() { val } else {
+        panic!("Sintax error: invalid operand: {}", left)
+    };
+    let operright = if let Ok(val) = bright.parse::<i32>() { val } else {
+        panic!("Sintax error: invalid operand: {}", right)
+    };
+
+    let result = match operator.as_ref() {
+        "==" => operleft == operright,
+        "!=" => operleft != operright,
+        "<" => operleft < operright,
+        ">" => operleft > operright,
+        "or"|"||" => operleft == 1 || operright == 1,
+        "and"|"&&" => operleft == 1 && operright == 1,
         _ => panic!("Sintax error: invalid operator {}", operator)
     };
 
@@ -247,6 +278,25 @@ fn it_accept_unary_operations() {
 
     assert_eq!("5", Interpreter::new().eval_tree(parser.parse()));
 }
+
+#[test]
+fn it_accept_binary_comparison() {
+    let text = "4 == 2";
+    let tokenizer = Tokenizer::new(String::from(text));
+    let mut parser = Parser::new(tokenizer);
+
+    assert_eq!("false", Interpreter::new().eval_tree(parser.parse()));
+}
+
+#[test]
+fn it_accept_composed_binary_comparison() {
+    let text = "2 == 2 and 3 != 3";
+    let tokenizer = Tokenizer::new(String::from(text));
+    let mut parser = Parser::new(tokenizer);
+
+    assert_eq!("false", Interpreter::new().eval_tree(parser.parse()));
+}
+
 
 #[test]
 fn it_eval_block_assigning_vars_to_symbol_table() {
