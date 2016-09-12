@@ -36,6 +36,22 @@ impl Parser {
         }
     }
 
+    // while
+    //
+    // while is a BEGIN followed by statement_list followed by END
+    // Represented as context free grammar:
+    // ```
+    //   while: expr BEGIN statement_list END
+    // ```
+    fn _while(&mut self) -> ast::Node {
+        self.tokenizer.consume(Kind::While);
+        let conditional = self.expr();
+        self.tokenizer.consume(Kind::Begin);
+        let statement_list = self.statement_list();
+        self.tokenizer.consume(Kind::End);
+        ast::Node::conditional(conditional, statement_list)
+    }
+
     // compound
     //
     // compound is a BEGIN followed by statement_list followed by END
@@ -88,6 +104,7 @@ impl Parser {
                 self.assign_statement()
             },
             Some(Token{ kind: Kind::Begin, ..}) => self.compound(),
+            Some(Token{ kind: Kind::While, ..}) => self._while(),
             _ => ast::Node::empty()
         }
     }

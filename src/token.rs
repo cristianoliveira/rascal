@@ -23,6 +23,8 @@ pub enum Kind {
     ID,
     StdOut,
     Return,
+    Conditional,
+    While,
 
     // Others
     Space,
@@ -61,6 +63,7 @@ impl Kind {
             "return" => Some(Kind::Return),
             "or"|"||"|"and"|"&&"|"=="|"!=" => Some(Kind::Comparison),
             "true"|"false" => Some(Kind::Bolean),
+            "while" => Some(Kind::While),
             _ => None
         }
     }

@@ -85,6 +85,25 @@ impl Interpreter {
                         })
                 },
 
+                Kind::Conditional=> {
+                    let mut condition = self.eval_tree(tree.clone().conditional.unwrap());
+                    let equals = String::from("==");
+                    let truly = String::from("true");
+
+                    while binary_comparison(condition.clone(), &equals, truly.clone()) == "true" {
+                        let _ = tree.clone().statements
+                            .unwrap()
+                            .iter()
+                            .map(|n| self.eval_tree(n.clone()))
+                            .fold(String::new(), |_, s|{
+                                s
+                            });
+                        condition = self.eval_tree(tree.clone().conditional.unwrap());
+                    }
+
+                    return String::new()
+                },
+
                 Kind::ID => self.symbol_table[&tree.value()].clone(),
 
                 _ => tree.value()
@@ -334,6 +353,17 @@ fn it_eval_block_retrieve_eturn_statement() {
 #[test]
 fn it_eval_block_bolean_block() {
     let text = "begin x = 1; y = 2; return y == x end";
+    let tokenizer = Tokenizer::new(String::from(text));
+    let mut parser = Parser::new(tokenizer);
+    let mut interpreter = Interpreter::new();
+    let result = interpreter.eval_tree(parser.parse());
+
+    assert_eq!("false", result);
+}
+
+#[test]
+fn it_eval_while_blocks() {
+    let text = "begin  y = 0; while y != 4 begin y = y + 1 end; return y == 0 end";
     let tokenizer = Tokenizer::new(String::from(text));
     let mut parser = Parser::new(tokenizer);
     let mut interpreter = Interpreter::new();

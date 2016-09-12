@@ -36,6 +36,19 @@ end
 ```
 Result: true
 
+Loops
+```ruby
+begin
+  y = 0;
+
+  while y != 4 begin
+    y = y + 1
+  end;
+
+  return y == 0;
+end
+```
+Result: false
 
 ## Future implementations
   * Boolean: evaluate booleans - DONE

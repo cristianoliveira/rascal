@@ -10,6 +10,7 @@ use token::{Token, Kind};
 pub struct Node{
     pub token: Token,
     pub statements: Option<Vec<Node>>,
+    pub conditional: Box<Option<Node>>,
     left: Box<Option<Node>>,
     right: Box<Option<Node>>,
 }
@@ -20,6 +21,7 @@ impl Node {
             left: Box::new(Some(left)),
             token: token,
             right: Box::new(Some(right)),
+            conditional: Box::new(None),
             statements: None
         }
     }
@@ -28,6 +30,7 @@ impl Node {
             left: Box::new(None),
             token: token,
             right: Box::new(None),
+            conditional: Box::new(None),
             statements: None
         }
     }
@@ -36,6 +39,7 @@ impl Node {
             left: Box::new(None),
             token: token,
             right: Box::new(Some(node)),
+            conditional: Box::new(None),
             statements: None
         }
     }
@@ -44,7 +48,17 @@ impl Node {
             left: Box::new(None),
             token: Token::build(Kind::Return, String::new()),
             right: Box::new(Some(node)),
+            conditional: Box::new(None),
             statements: None
+        }
+    }
+    pub fn conditional(node:Node, statements: Vec<Node>) -> Self {
+        Node {
+            left: Box::new(None),
+            token: Token::build(Kind::Conditional, String::new()),
+            right: Box::new(None),
+            conditional: Box::new(Some(node)),
+            statements: Some(statements)
         }
     }
     pub fn compound(statements: Vec<Node>) -> Self {
@@ -52,6 +66,7 @@ impl Node {
             left: Box::new(None),
             token: Token::build(Kind::Statement, String::new()),
             right: Box::new(None),
+            conditional: Box::new(None),
             statements: Some(statements)
         }
     }
@@ -60,6 +75,7 @@ impl Node {
             left: Box::new(None),
             token: Token::build(Kind::Statement, String::new()),
             right: Box::new(None),
+            conditional: Box::new(None),
             statements: None
         }
     }
