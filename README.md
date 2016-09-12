@@ -7,9 +7,10 @@ This language is based on Pascal/Ruby and follow its structure.
   * Blocks: `begin .. end`
   * Assign variables: `=`
   * Boolean: `true`, `false`
-  * Comparison: `==`,`!=`, `and`, `or`
+  * Comparison: `==`,`!=`, `>`, `<`, `and`, `or`
   * Statement end: `;`
   * Return expression: `return`
+  * If else: `if 1==1 begin .. else .. end`
   * Loop: `while 1==1 begin .. end`
 
 Each statement requires a `;` unless the last statement. Example of runnable code:
@@ -37,6 +38,23 @@ end
 ```
 Result: true
 
+If else blocks
+```ruby
+begin
+  x = 2;
+  y = 0;
+
+  if x != 2 begin
+    y = 13
+  else
+    y = 42
+  end
+
+  y == 42
+end
+```
+Result: true
+
 Loops
 ```ruby
 begin
@@ -56,7 +74,6 @@ Result: true
   * Mutable explicit: explicity say when var is mutable `mut`
   * Strings: support for strings
   * String comparison: support for compare strings
-  * Conditional: Evaluate conditional `if` `else` blocks
   * Print: prints on stdout the given expression
   * Return: return in the middle of a block
   * Stable REPL: run code without exiting for sintax errors
