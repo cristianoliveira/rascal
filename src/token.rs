@@ -17,6 +17,7 @@ pub enum Kind {
     // Reserved
     Begin,
     End,
+    Empty,
     Statement,
     StatementEnd,
     Assign,
@@ -25,6 +26,8 @@ pub enum Kind {
     Return,
     Conditional,
     While,
+    If,
+    Else,
 
     // Others
     Space,
@@ -56,15 +59,21 @@ impl Kind {
     // Retrieve a special kind for reserved keywords from a given string
     pub fn reserved(word: &String) -> Option<Kind> {
         match word.as_ref() {
+            // Blocks Statements
+            "=" => Some(Kind::Assign),
             "begin" => Some(Kind::Begin),
             "end" => Some(Kind::End),
-            "=" => Some(Kind::Assign),
-            "print" => Some(Kind::StdOut),
             "return" => Some(Kind::Return),
+
+            // System
+            "print" => Some(Kind::StdOut),
+
+            // Conditionals
             "while" => Some(Kind::While),
+            "if" => Some(Kind::If),
+            "else" => Some(Kind::Else),
             "true"|"false" => Some(Kind::Bolean),
-            "or"|"||"|
-            "and"|"&&"|
+            "or"|"||"|"and"|"&&" => Some(Kind::Comparison),
             "=="|"!="|">"|"<" => Some(Kind::Comparison),
             _ => None
         }
@@ -360,3 +369,28 @@ fn it_accepts_complex_comparison_tokens() {
         Some(Token { kind: Kind::Bolean, value: String::from("false") })
     );
 }
+
+#[test]
+fn it_acepts_if_else_statements() {
+    let text = "if x == y begin x = 1 else x = 2 end";
+    let mut tokens = Tokenizer::new(String::from(text));
+
+    assert_eq!(
+        tokens.next(),
+        Some(Token { kind: Kind::If, value: String::from("if") })
+    );
+
+    tokens.next(); // x
+    tokens.next(); // ==
+    tokens.next(); // y
+    tokens.next(); // begin
+    tokens.next(); // x
+    tokens.next(); // =
+    tokens.next(); // 1
+
+    assert_eq!(
+        tokens.next(),
+        Some(Token { kind: Kind::Else, value: String::from("else") })
+    );
+}
+

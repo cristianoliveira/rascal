@@ -41,7 +41,7 @@ impl Parser {
     // while is a BEGIN followed by statement_list followed by END
     // Represented as context free grammar:
     // ```
-    //   while: expr BEGIN statement_list END
+    //   while: WHILE expr BEGIN statement_list END
     // ```
     fn _while(&mut self) -> ast::Node {
         self.tokenizer.consume(Kind::While);
@@ -50,6 +50,31 @@ impl Parser {
         let statement_list = self.statement_list();
         self.tokenizer.consume(Kind::End);
         ast::Node::conditional(conditional, statement_list)
+    }
+
+    // if
+    //
+    // if is a IF BEGIN followed by statement_list followed optionally by 
+    // ELSE followed by statement_list followed by END
+    // Represented as context free grammar:
+    // ```
+    //   if: IF expr BEGIN statement_list END
+    //   if: IF expr BEGIN statement_list ELSE statement_lit END
+    // ```
+    fn _if(&mut self) -> ast::Node {
+        self.tokenizer.consume(Kind::If);
+        let condition = self.expr();
+        self.tokenizer.consume(Kind::Begin);
+        let if_node = ast::Node::compound(self.statement_list());
+        let optional_elsenode =
+            if let Some(Token{ kind: Kind::Else, ..}) = self.tokenizer.get() {
+                self.tokenizer.consume(Kind::Else);
+                ast::Node::compound(self.statement_list())
+            } else {
+                ast::Node::empty()
+            };
+        self.tokenizer.consume(Kind::End);
+        ast::Node::ifelse(condition, if_node, optional_elsenode)
     }
 
     // compound
@@ -91,6 +116,8 @@ impl Parser {
     // ```
     //   statement: compoud_statement
     //   statement: return_statement
+    //   statement: while_block
+    //   statement: if_block
     //   statement: assign_statement
     //   statement: empty_statement
     // ```
@@ -105,6 +132,7 @@ impl Parser {
             },
             Some(Token{ kind: Kind::Begin, ..}) => self.compound(),
             Some(Token{ kind: Kind::While, ..}) => self._while(),
+            Some(Token{ kind: Kind::If, ..}) => self._if(),
             _ => ast::Node::empty()
         }
     }
@@ -117,7 +145,7 @@ impl Parser {
     //   assign_statement: variable ASSIGN expr
     // ```
     fn assign_statement(&mut self) -> ast::Node {
-        ast::Node::new(self.variable(),
+        ast::Node::binary(self.variable(),
                        self.tokenizer.advance().consume(Kind::Assign),
                        self.expr())
     }
@@ -191,12 +219,12 @@ impl Parser {
         if let Some(token) = self.tokenizer.advance().get() {
             match token.value.as_ref() {
                 "*" | "/" => {
-                    return ast::Node::new(result.clone(),
+                    return ast::Node::binary(result.clone(),
                                           self.tokenizer.consume(Kind::Operator),
                                           self.factor())
                 },
                 "==" | "!=" | ">" | "<" => {
-                    return ast::Node::new(result.clone(),
+                    return ast::Node::binary(result.clone(),
                                           self.tokenizer.consume(Kind::Comparison),
                                           self.factor())
                 },
@@ -221,12 +249,12 @@ impl Parser {
             if token.kind == Kind::EOF { break }
             match token.value.as_ref() {
                 "+" | "-" => {
-                    result = ast::Node::new(result.clone(),
+                    result = ast::Node::binary(result.clone(),
                                             self.tokenizer.consume(Kind::Operator),
                                             self.term())
                 },
                 "and"|"&&"|"or" | "||" => {
-                    result = ast::Node::new(result.clone(),
+                    result = ast::Node::binary(result.clone(),
                                             self.tokenizer.consume(Kind::Comparison),
                                             self.term())
                 },
@@ -249,7 +277,7 @@ fn test_node_builder(left: String, operator: String, right: String) -> ast::Node
     let lnode = ast::Node::leaf(Token::build(Kind::Integer, left));
     let token = Token::build(Kind::Operator, operator);
     let rnode = ast::Node::leaf(Token::build(Kind::Integer, right));
-    ast::Node::new(lnode, token, rnode)
+    ast::Node::binary(lnode, token, rnode)
 }
 
 #[test]
@@ -277,7 +305,7 @@ fn it_parses_multiples_operation() {
     let token = Token::build(Kind::Operator, String::from("-"));
     let rnode = ast::Node::leaf(Token::build(Kind::Integer, String::from("4")));
 
-    let expected = ast::Node::new(firstsum, token, rnode);
+    let expected = ast::Node::binary(firstsum, token, rnode);
     assert_eq!(expected, parser.parse());
 }
 
@@ -294,7 +322,7 @@ fn it_parses_respecting_precedence() {
     let token = Token::build(Kind::Operator, String::from("+"));
     let rnode = ast::Node::leaf(Token::build(Kind::Integer, String::from("10")));
 
-    let expected = ast::Node::new(rnode, token, plusnode);
+    let expected = ast::Node::binary(rnode, token, plusnode);
     assert_eq!(expected, parser.parse());
 }
 
@@ -311,7 +339,7 @@ fn it_parses_respecting_parentesis_precedence() {
     let token = Token::build(Kind::Operator, String::from("*"));
     let rnode = ast::Node::leaf(Token::build(Kind::Integer, String::from("4")));
 
-    let expected = ast::Node::new(plusnode, token, rnode);
+    let expected = ast::Node::binary(plusnode, token, rnode);
     assert_eq!(expected, parser.parse());
 }
 
@@ -327,7 +355,7 @@ fn it_parses_simple_block() {
 
     let var = ast::Node::leaf(Token{ kind: Kind::ID, value: String::from("x")});
     let assign_token = Token{ kind: Kind::Assign, value: String::from("=")};
-    let assign = ast::Node::new(var, assign_token, expr);
+    let assign = ast::Node::binary(var, assign_token, expr);
 
     let comp = ast::Node::compound(vec![assign]);
     assert_eq!(comp, parser.parse());
@@ -343,13 +371,13 @@ fn it_parses_multiple_statements() {
 
     let yvar = ast::Node::leaf(Token{ kind: Kind::ID, value: String::from("y")});
     let yvalue = ast::Node::leaf(Token{ kind: Kind::Integer, value: String::from("100")});
-    let yassign = ast::Node::new(yvar, assign_token.clone(), yvalue);
+    let yassign = ast::Node::binary(yvar, assign_token.clone(), yvalue);
 
     let expr = test_node_builder(String::from("10"),
                                  String::from("+"),
                                  String::from("5"));
     let xvar = ast::Node::leaf(Token{ kind: Kind::ID, value: String::from("x")});
-    let xassign = ast::Node::new(xvar, assign_token, expr);
+    let xassign = ast::Node::binary(xvar, assign_token, expr);
 
     let comp = ast::Node::compound(vec![xassign, yassign]);
     assert_eq!(comp, parser.parse());
@@ -364,7 +392,7 @@ fn it_parses_bolean_comparison() {
     let lcompar = ast::Node::leaf(Token::build(Kind::Bolean, String::from("true")));
     let rcompar = ast::Node::leaf(Token::build(Kind::Bolean, String::from("false")));
     let tkcompar = Token::build(Kind::Comparison, String::from("=="));
-    let comparison = ast::Node::new(lcompar, tkcompar, rcompar);
+    let comparison = ast::Node::binary(lcompar, tkcompar, rcompar);
 
     assert_eq!(comparison, parser.parse());
 }
@@ -378,12 +406,12 @@ fn it_parses_bolean_expression() {
     let lcompar = ast::Node::leaf(Token::build(Kind::Bolean, String::from("true")));
     let rcompar = ast::Node::leaf(Token::build(Kind::Bolean, String::from("false")));
     let tkcompar = Token::build(Kind::Comparison, String::from("=="));
-    let comparison = ast::Node::new(lcompar, tkcompar, rcompar);
+    let comparison = ast::Node::binary(lcompar, tkcompar, rcompar);
 
     let token = Token::build(Kind::Comparison, String::from("and"));
     let rnode = ast::Node::leaf(Token::build(Kind::Bolean, String::from("true")));
 
-    let expected = ast::Node::new(rnode, token, comparison);
+    let expected = ast::Node::binary(rnode, token, comparison);
     assert_eq!(expected, parser.parse());
 }
 
@@ -396,16 +424,16 @@ fn it_parses_expressions_gt_lt() {
     let lcompar = ast::Node::leaf(Token::build(Kind::Integer, String::from("1")));
     let tkcompar = Token::build(Kind::Comparison, String::from(">"));
     let rcompar = ast::Node::leaf(Token::build(Kind::Integer, String::from("2")));
-    let lnode = ast::Node::new(lcompar, tkcompar, rcompar);
+    let lnode = ast::Node::binary(lcompar, tkcompar, rcompar);
 
     let token = Token::build(Kind::Comparison, String::from("or"));
 
     let lcompar2 = ast::Node::leaf(Token::build(Kind::Integer, String::from("1")));
     let tkcompa2 = Token::build(Kind::Comparison, String::from("<"));
     let rcompar2 = ast::Node::leaf(Token::build(Kind::Integer, String::from("2")));
-    let rnode = ast::Node::new(lcompar2, tkcompa2, rcompar2);
+    let rnode = ast::Node::binary(lcompar2, tkcompa2, rcompar2);
 
-    let expected = ast::Node::new(lnode, token, rnode);
+    let expected = ast::Node::binary(lnode, token, rnode);
     assert_eq!(expected, parser.parse());
 }
 

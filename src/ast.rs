@@ -16,7 +16,7 @@ pub struct Node{
 }
 
 impl Node {
-    pub fn new(left: Node, token: Token, right: Node) -> Self {
+    pub fn binary(left: Node, token: Token, right: Node) -> Self {
         Node {
             left: Box::new(Some(left)),
             token: token,
@@ -49,6 +49,15 @@ impl Node {
             token: Token::build(Kind::Return, String::new()),
             right: Box::new(Some(node)),
             conditional: Box::new(None),
+            statements: None
+        }
+    }
+    pub fn ifelse(condition: Node, if_node: Node, else_node: Node) -> Self {
+        Node {
+            left: Box::new(Some(if_node)),
+            token: Token::build(Kind::Conditional, String::new()),
+            right: Box::new(Some(else_node)),
+            conditional: Box::new(Some(condition)),
             statements: None
         }
     }

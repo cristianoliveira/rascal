@@ -59,6 +59,18 @@ impl Interpreter {
                     self.assign_variable(lnode.value(), value)
                 },
 
+                Kind::Conditional=> {
+                    let mut condition = self.eval_tree(tree.clone().conditional.unwrap());
+                    let equals = String::from("==");
+                    let truly = String::from("true");
+
+                    if binary_comparison(condition.clone(), &equals, truly.clone()) == "true" {
+                        self.eval_tree(lnode)
+                    } else {
+                        self.eval_tree(rnode)
+                    }
+                }
+
                 _ => panic!("Interpreter error: unexpecte node kind {:?}",
                                 tree)
             },
@@ -76,13 +88,15 @@ impl Interpreter {
 
             (None, None) => match kind {
                 Kind::Statement => {
-                    return tree.clone().statements
-                        .unwrap()
-                        .iter()
-                        .map(|n| self.eval_tree(n.clone()))
-                        .fold(String::new(), |_, s|{
-                            s
-                        })
+                    if let Some(list) = tree.clone().statements {
+                        return list.iter()
+                            .map(|n| self.eval_tree(n.clone()))
+                            .fold(String::new(), |_, s|{
+                                s
+                            })
+                    } else {
+                        String::new()
+                    }
                 },
 
                 Kind::Conditional=> {
@@ -105,6 +119,8 @@ impl Interpreter {
                 },
 
                 Kind::ID => self.symbol_table[&tree.value()].clone(),
+
+                Kind::Empty => String::new(),
 
                 _ => tree.value()
             }
@@ -192,7 +208,7 @@ fn it_eval_the_node_binary_operation() {
     let left = Node::leaf(Token::build(Kind::Integer, String::from("3")));
     let operator = Token::build(Kind::Operator, String::from("+"));
     let right = Node::leaf(Token::build(Kind::Integer, String::from("5")));
-    let node = Node::new(left, operator, right);
+    let node = Node::binary(left, operator, right);
 
     assert_eq!("8", Interpreter::new().eval_tree(node))
 }
@@ -203,11 +219,11 @@ fn it_eval_complex_tree() {
     let left = Node::leaf(Token::build(Kind::Integer, String::from("3")));
     let operator = Token::build(Kind::Operator, String::from("*"));
     let right = Node::leaf(Token::build(Kind::Integer, String::from("5")));
-    let plusnode = Node::new(left, operator, right);
+    let plusnode = Node::binary(left, operator, right);
 
     let operator = Token::build(Kind::Operator, String::from("+"));
     let sumright = Node::leaf(Token::build(Kind::Integer, String::from("5")));
-    let sumnode = Node::new(plusnode, operator, sumright);
+    let sumnode = Node::binary(plusnode, operator, sumright);
 
     assert_eq!("20", Interpreter::new().eval_tree(sumnode))
 }
@@ -221,7 +237,7 @@ fn it_eval_unary_operations() {
 
     let operator = Token::build(Kind::Operator, String::from("-"));
     let left = Node::leaf(Token::build(Kind::Integer, String::from("2")));
-    let sumnode = Node::new(left, operator, unarynode);
+    let sumnode = Node::binary(left, operator, unarynode);
 
     assert_eq!("4", Interpreter::new().eval_tree(sumnode))
 }
@@ -370,4 +386,26 @@ fn it_eval_while_blocks() {
     let result = interpreter.eval_tree(parser.parse());
 
     assert_eq!("true", result);
+}
+
+#[test]
+fn it_eval_if_blocks() {
+    let text = "begin  y = 0; if y < 4 begin y = 4 end; return y == 4 end";
+    let tokenizer = Tokenizer::new(String::from(text));
+    let mut parser = Parser::new(tokenizer);
+    let mut interpreter = Interpreter::new();
+    let result = interpreter.eval_tree(parser.parse());
+
+    assert_eq!("true", result);
+}
+
+#[test]
+fn it_eval_ifelse_blocks() {
+    let text = "begin  y = 0; if false begin y = 4 else y = 42 end; return y end";
+    let tokenizer = Tokenizer::new(String::from(text));
+    let mut parser = Parser::new(tokenizer);
+    let mut interpreter = Interpreter::new();
+    let result = interpreter.eval_tree(parser.parse());
+
+    assert_eq!("42", result);
 }
