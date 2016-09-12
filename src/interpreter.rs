@@ -43,47 +43,46 @@ impl Interpreter {
         let nodes = tree.clone().nodes();
         let kind = tree.clone().kind();
         match nodes {
-            (Some(lnode), Some(rnode)) => {
-                match kind {
-                    Kind::Operator =>
-                        binary_operation(self.eval_tree(lnode),
-                                         &tree.value(),
-                                         self.eval_tree(rnode)).to_string(),
+            (Some(lnode), Some(rnode)) => match kind {
+                Kind::Operator =>
+                    binary_operation(self.eval_tree(lnode),
+                                     &tree.value(),
+                                     self.eval_tree(rnode)),
 
-                    Kind::Assign => {
-                        let value = self.eval_tree(rnode);
-                        self.assign_variable(lnode.value(), value)
-                    },
+                Kind::Assign => {
+                    let value = self.eval_tree(rnode);
+                    self.assign_variable(lnode.value(), value)
+                },
 
-                    _ => panic!("Interpreter error: unexpecte node kind {:?}",
+                _ => panic!("Interpreter error: unexpecte node kind {:?}",
                                 tree)
-                }
             },
 
             (Some(lnode), None) => self.eval_tree(lnode),
 
             (None, Some(rnode)) => match tree.clone().kind() {
                 Kind::Operator =>
-                    unary_operation(tree.value(), self.eval_tree(rnode)).to_string(),
+                    unary_operation(tree.value(), self.eval_tree(rnode)),
 
-                Kind::Return =>
-                    self.eval_tree(rnode),
+                Kind::Return => self.eval_tree(rnode),
+
                 _ => String::new()
             },
 
-            (None, None) => {
-                if let Some(statements) = tree.clone().statements {
-                    return statements.iter()
-                              .map(|n| self.eval_tree(n.clone()))
-                              .fold(String::new(), |_, s|{
-                                  s
-                              })
-                }
+            (None, None) => match kind {
+                Kind::Statement => {
+                    return tree.clone().statements
+                        .unwrap()
+                        .iter()
+                        .map(|n| self.eval_tree(n.clone()))
+                        .fold(String::new(), |_, s|{
+                            s
+                        })
+                },
 
-                match kind {
-                    Kind::ID => self.symbol_table[&tree.value()].clone(),
-                    _ => tree.value()
-                }
+                Kind::ID => self.symbol_table[&tree.value()].clone(),
+
+                _ => tree.value()
             }
         }
     }
@@ -96,33 +95,37 @@ impl Interpreter {
 
 // unary_operation
 // Resolves the unary operations Example: --1 == 1, 1++-1==0
-fn unary_operation(operator: String, operand: String) -> i32 {
+fn unary_operation(operator: String, operand: String) -> String {
     let ioperand = if let Ok(val) = operand.parse::<i32>() { val } else {
         panic!("Sintax error: invalid unary operand {}", operand)
     };
-    match operator.as_ref() {
+    let result = match operator.as_ref() {
         "+" => ioperand,
         "-" => -(ioperand),
         _ => panic!("Sintax error: invalid unary operator {}", operator)
-    }
+    };
+
+    result.to_string()
 }
 
 // binary_operation
 // Resolve binary expression for the given left, operator and right operand
-fn binary_operation(operand: String, operator: &String, operand2: String) -> i32 {
-    let left = if let Ok(val) = operand.parse::<i32>() { val } else {
-        panic!("Sintax error: invalid operand: {}", operand)
+fn binary_operation(left: String, operator: &String, right: String) -> String {
+    let operleft = if let Ok(val) = left.parse::<i32>() { val } else {
+        panic!("Sintax error: invalid operand: {}", left)
     };
-    let right = if let Ok(val) = operand2.parse::<i32>() { val } else {
-        panic!("Sintax error: invalid operand: {}", operand2)
+    let operright = if let Ok(val) = right.parse::<i32>() { val } else {
+        panic!("Sintax error: invalid operand: {}", right)
     };
-    match operator.as_ref() {
-        "+" => left + right,
-        "-" => left - right,
-        "*" => left * right,
-        "/" => left / right,
+    let result = match operator.as_ref() {
+        "+" => operleft + operright,
+        "-" => operleft - operright,
+        "*" => operleft * operright,
+        "/" => operleft / operright,
         _ => panic!("Sintax error: invalid operator {}", operator)
-    }
+    };
+
+    result.to_string()
 }
 
 #[test]
