@@ -330,3 +330,14 @@ fn it_eval_block_retrieve_eturn_statement() {
 
     assert_eq!("20", result);
 }
+
+#[test]
+fn it_eval_block_bolean_block() {
+    let text = "begin x = 1; y = 2; return y == x end";
+    let tokenizer = Tokenizer::new(String::from(text));
+    let mut parser = Parser::new(tokenizer);
+    let mut interpreter = Interpreter::new();
+    let result = interpreter.eval_tree(parser.parse());
+
+    assert_eq!("false", result);
+}

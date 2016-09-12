@@ -6,10 +6,13 @@ This language is based on Pascal/Ruby and follow its structure.
 
   * Blocks: `begin .. end`
   * Assign variables: `=`
+  * Boolean: `true`, `false`
+  * Comparison: `==`,`!=`, `and`, `or`
   * Statement end: `;`
   * Return expression: `return`
 
 Each statement requires a `;` unless the last statement. Example of runnable code:
+Integers
 ```ruby
 begin
   x = 20;
@@ -21,8 +24,21 @@ end
 ```
 Result: 30
 
+Bolean
+```ruby
+begin
+  x = 2;
+  y = 1;
+  z = x != y;
+
+  return z == true;
+end
+```
+Result: true
+
+
 ## Future implementations
-  * Boolean: evaluate booleans
+  * Boolean: evaluate booleans - DONE
   * Print: prints on stdout the given expression
   * Conditional: Evaluate conditional `if` `else` blocks
   * Loops: `while` condition repeat statement
