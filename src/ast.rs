@@ -11,8 +11,8 @@ pub struct Node{
     pub token: Token,
     pub statements: Option<Vec<Node>>,
     pub conditional: Box<Option<Node>>,
-    left: Box<Option<Node>>,
-    right: Box<Option<Node>>,
+    pub left: Box<Option<Node>>,
+    pub right: Box<Option<Node>>,
 }
 
 impl Node {
@@ -82,19 +82,10 @@ impl Node {
     pub fn empty() -> Self {
         Node {
             left: Box::new(None),
-            token: Token::build(Kind::Statement, String::new()),
+            token: Token::build(Kind::Empty, String::new()),
             right: Box::new(None),
             conditional: Box::new(None),
             statements: None
         }
-    }
-    pub fn nodes(self) -> (Option<Node>, Option<Node>) {
-        (*self.left, *self.right)
-    }
-    pub fn value(self) -> String {
-        self.token.value
-    }
-    pub fn kind(self) -> Kind {
-        self.token.kind
     }
 }

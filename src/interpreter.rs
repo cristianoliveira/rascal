@@ -42,30 +42,25 @@ impl Interpreter {
     // |3|   |5|
     // +-+   +-+
     pub fn eval_tree(&mut self, tree: Node) -> String {
-        let nodes = tree.clone().nodes();
-        let kind = tree.clone().kind();
-        let value = tree.clone().value();
-        let conditional = tree.clone().conditional;
-        println!("node {:?}", kind);
-        match nodes {
-            (Some(lnode), Some(rnode)) => match kind {
+        let Node{ token, statements, conditional, left, right } = tree;
+        match (*left, *right, *conditional) {
+
+            (Some(lnode), Some(rnode), conditional) => match token.kind {
                 Kind::Operator =>
                     binary_operation(self.eval_tree(lnode),
-                                     &tree.value(),
+                                     &token.value,
                                      self.eval_tree(rnode)),
 
                 Kind::Comparison =>
                     binary_comparison(self.eval_tree(lnode),
-                                      &tree.value(),
+                                      &token.value,
                                       self.eval_tree(rnode)),
 
                 Kind::Assign => {
                     let value = self.eval_tree(rnode);
-                    let name = lnode.clone().value();
-                    let var_kind = lnode.clone().kind();
+                    let Token{ kind, value: name } = lnode.token;
 
-                    println!("var_kind {:?}", var_kind);
-                    if var_kind == Kind::CONST_ID {
+                    if kind == Kind::CONST_ID {
                         self.imutable_table.insert(name, value.clone());
                     } else {
                         self.symbol_table.insert(name, value.clone());
@@ -75,10 +70,8 @@ impl Interpreter {
 
                 Kind::ReAssign => {
                     let value = self.eval_tree(rnode);
-                    let name = lnode.clone().value();
-                    let var_kind = lnode.clone().kind();
+                    let Token{ value: name, ..} = lnode.token;
 
-                    println!("{:?} var_kind {:?}", name, var_kind);
                     if self.imutable_table.contains_key(&*name) {
                         panic!("Value error: invalid assign imutable {}", name)
                     }
@@ -88,11 +81,9 @@ impl Interpreter {
                 },
 
                 Kind::Conditional=> {
-                    let mut condition = self.eval_tree(conditional.unwrap());
-                    let equals = String::from("==");
-                    let truly = String::from("true");
+                    let condition = self.eval_tree(conditional.unwrap());
 
-                    if binary_comparison(condition.clone(), &equals, truly.clone()) == "true" {
+                    if truthy(condition) {
                         self.eval_tree(lnode)
                     } else {
                         self.eval_tree(rnode)
@@ -102,20 +93,20 @@ impl Interpreter {
                 _ => String::from("nil")
             },
 
-            (Some(lnode), None) => self.eval_tree(lnode),
+            (Some(lnode), None, _) => self.eval_tree(lnode),
 
-            (None, Some(rnode)) => match tree.clone().kind() {
+            (None, Some(rnode), _) => match token.kind {
                 Kind::Operator =>
-                    unary_operation(value, self.eval_tree(rnode)),
+                    unary_operation(token.value, self.eval_tree(rnode)),
 
                 Kind::Return => self.eval_tree(rnode),
 
                 _ => String::from("nil")
             },
 
-            (None, None) => match kind {
+            (None, None, conditional) => match token.kind {
                 Kind::Statement => {
-                    if let Some(list) = tree.clone().statements {
+                    if let Some(list) = statements {
                         return list.iter()
                             .map(|n| self.eval_tree(n.clone()))
                             .fold(String::new(), |_, s|{
@@ -127,31 +118,27 @@ impl Interpreter {
                 },
 
                 Kind::Conditional => {
-                    let mut condition = self.eval_tree(conditional.unwrap());
-                    let equals = String::from("==");
-                    let truly = String::from("true");
+                    let mut condition = self.eval_tree(conditional.clone().unwrap());
 
-                    while binary_comparison(condition.clone(), &equals, truly.clone()) == "true" {
-                        let _ = tree.clone().statements
+                    while truthy(condition) {
+                        let _ = statements.clone()
                             .unwrap()
                             .iter()
                             .map(|n| self.eval_tree(n.clone()))
                             .fold(String::new(), |_, s|{
                                 s
                             });
-                        condition = self.eval_tree(tree.clone()
-                                                       .conditional
-                                                       .unwrap());
+                        condition = self.eval_tree(conditional.clone().unwrap());
                     }
 
                     return String::from("nil")
                 },
 
                 Kind::ID =>
-                    match self.imutable_table.get(&value) {
+                    match self.imutable_table.get(&token.value) {
                         Some(value) => return value.clone(),
                         None =>
-                            match self.symbol_table.get(&value) {
+                            match self.symbol_table.get(&token.value) {
                                 Some(value) => return value.clone(),
                                 None =>
                                 panic!("Interpreter error: undeclared variable")
@@ -160,7 +147,7 @@ impl Interpreter {
 
                 Kind::Empty => String::from("nil"),
 
-                _ => tree.value()
+                _ => token.value
             }
         }
     }
@@ -225,6 +212,12 @@ fn binary_comparison(left: String, operator: &String, right: String) -> String {
     };
 
     result.to_string()
+}
+
+fn truthy(condition: String) -> bool {
+    binary_comparison(condition,
+                      &String::from("=="),
+                      String::from("true")) == "true"
 }
 
 #[test]
@@ -383,7 +376,7 @@ fn it_eval_block_retrieve_vars_from_symbol_table() {
     let tokenizer = Tokenizer::new(String::from(text));
     let mut parser = Parser::new(tokenizer);
     let mut interpreter = Interpreter::new();
-    let result = interpreter.eval_tree(parser.parse());
+    let _ = interpreter.eval_tree(parser.parse());
 
     assert_eq!("10", interpreter.imutable_table["x"]);
     assert_eq!("15", interpreter.symbol_table["y"]);
