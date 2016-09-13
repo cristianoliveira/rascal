@@ -110,7 +110,7 @@ impl Interpreter {
 
                 Kind::Return => self.eval_tree(rnode),
 
-                _ => String::new()
+                _ => String::from("nil")
             },
 
             (None, None) => match kind {
@@ -122,7 +122,7 @@ impl Interpreter {
                                 s
                             })
                     } else {
-                        String::new()
+                        String::from("nil")
                     }
                 },
 
@@ -144,7 +144,7 @@ impl Interpreter {
                                                        .unwrap());
                     }
 
-                    return String::new()
+                    return String::from("nil")
                 },
 
                 Kind::ID =>
@@ -158,7 +158,7 @@ impl Interpreter {
                         }
                     },
 
-                Kind::Empty => String::new(),
+                Kind::Empty => String::from("nil"),
 
                 _ => tree.value()
             }
