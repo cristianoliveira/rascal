@@ -20,8 +20,12 @@ pub enum Kind {
     Empty,
     Statement,
     StatementEnd,
+    ImmutableDefine,
+    MutableDefine,
+    ReAssign,
     Assign,
     ID,
+    CONST_ID,
     StdOut,
     Return,
     Conditional,
@@ -60,6 +64,8 @@ impl Kind {
     pub fn reserved(word: &String) -> Option<Kind> {
         match word.as_ref() {
             // Blocks Statements
+            "imut" => Some(Kind::ImmutableDefine),
+            "mut" => Some(Kind::MutableDefine),
             "=" => Some(Kind::Assign),
             "begin" => Some(Kind::Begin),
             "end" => Some(Kind::End),
@@ -152,7 +158,7 @@ impl Tokenizer {
             }
             return token;
         } else {
-            panic!("Interpreter error: unexpected end of file");
+            panic!("Lexer error: expected {:?} found end of file", expected_kind);
         }
     }
 }

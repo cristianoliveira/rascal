@@ -118,6 +118,7 @@ impl Parser {
     //   statement: return_statement
     //   statement: while_block
     //   statement: if_block
+    //   statement: define_statement
     //   statement: assign_statement
     //   statement: empty_statement
     // ```
@@ -126,6 +127,10 @@ impl Parser {
             Some(Token{ kind: Kind::Return, ..}) => {
                 self.tokenizer.consume(Kind::Return);
                 ast::Node::_return(self.expr())
+            },
+            Some(Token{ kind: Kind::ImmutableDefine, ..}) |
+            Some(Token{ kind: Kind::MutableDefine, ..}) => {
+                self.define_statement()
             },
             Some(Token{ kind: Kind::ID, ..}) => {
                 self.assign_statement()
@@ -139,15 +144,59 @@ impl Parser {
 
     // assign_statement
     //
-    // assign_statement is an variable followed by an assign token followed by 
+    // assign_statement is an constant followed by an assign token followed by 
     // an expression (expr). Represented as context free grammar:
     // ```
-    //   assign_statement: variable ASSIGN expr
+    //   assign_statement: constant ASSIGN expr
     // ```
     fn assign_statement(&mut self) -> ast::Node {
-        ast::Node::binary(self.variable(),
-                       self.tokenizer.advance().consume(Kind::Assign),
-                       self.expr())
+        ast::Node::binary(
+            self.variable(),
+            Token::build(Kind::ReAssign,
+                         self.tokenizer.advance().consume(Kind::Assign).value),
+            self.expr())
+    }
+
+    // define_statement
+    //
+    // define_statement is an LET or MUT followed by variable followed by
+    // an assign token followed by an expression (expr).
+    // Represented as context free grammar:
+    // ```
+    //   define_statement: MUT variable
+    //   define_statement: MUT variable ASSIGN expr
+    //   define_statement: IMUT constant ASSIGN expr
+    // ```
+    fn define_statement(&mut self) -> ast::Node {
+        match self.tokenizer.get() {
+            Some(Token{ kind: Kind:: MutableDefine , ..}) => {
+                self.tokenizer.consume(Kind::MutableDefine);
+                self.tokenizer.advance();
+                ast::Node::binary(
+                    self.variable(),
+                    self.tokenizer.advance().consume(Kind::Assign),
+                    self.expr())
+            },
+            _ => {
+                self.tokenizer.consume(Kind::ImmutableDefine);
+                self.tokenizer.advance();
+                ast::Node::binary(
+                    self.constant(),
+                    self.tokenizer.advance().consume(Kind::Assign),
+                    self.expr())
+            }
+        }
+    }
+
+    // constant
+    //
+    // constant is an CONST_ID. Represented as context free grammar:
+    // ```
+    //   constant: CONST_ID
+    // ```
+    fn constant(&mut self) -> ast::Node {
+        let token = self.tokenizer.consume(Kind::ID);
+        ast::Node::leaf(Token::build(Kind::CONST_ID, token.value))
     }
 
     // variable
@@ -172,6 +221,7 @@ impl Parser {
     //  factor:: BOLEAN
     //  factor:: ( expr )
     //  factor:: variable
+    //  factor:: constant
     // ```
     fn factor(&mut self) -> ast::Node {
         match self.tokenizer.advance().get() {
@@ -196,6 +246,10 @@ impl Parser {
 
             Some(Token{ kind: Kind::ID, .. }) => {
                 self.variable()
+            },
+
+            Some(Token{ kind: Kind::CONST_ID, .. }) => {
+                self.constant()
             },
 
             other =>
@@ -345,7 +399,7 @@ fn it_parses_respecting_parentesis_precedence() {
 
 #[test]
 fn it_parses_simple_block() {
-    let text = "begin x = 10+5 end";
+    let text = "begin mut x = 10+5 end";
     let tokenizer = Tokenizer::new(String::from(text));
     let mut parser = Parser::new(tokenizer);
 
@@ -363,13 +417,13 @@ fn it_parses_simple_block() {
 
 #[test]
 fn it_parses_multiple_statements() {
-    let text = "begin x = 10+5; y = 100 end";
+    let text = "begin mut x = 10+5; imut y = 100 end";
     let tokenizer = Tokenizer::new(String::from(text));
     let mut parser = Parser::new(tokenizer);
     let assign_token = Token{ kind: Kind::Assign, value: String::from("=")};
 
 
-    let yvar = ast::Node::leaf(Token{ kind: Kind::ID, value: String::from("y")});
+    let yvar = ast::Node::leaf(Token{ kind: Kind::CONST_ID, value: String::from("y")});
     let yvalue = ast::Node::leaf(Token{ kind: Kind::Integer, value: String::from("100")});
     let yassign = ast::Node::binary(yvar, assign_token.clone(), yvalue);
 
