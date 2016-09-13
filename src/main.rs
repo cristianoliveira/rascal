@@ -14,7 +14,7 @@ fn main() {
             let tokenizer = token::Tokenizer::new(expr);
             let mut parser = parser::Parser::new(tokenizer);
             let mut interpreter = interpreter::Interpreter::new();
-            let result = interpreter.eval_tree(parser.parse());
+            let result = interpreter.eval(parser.parse());
             println!(">> {}", result);
         }
     }
