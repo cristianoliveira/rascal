@@ -1,6 +1,11 @@
 [package]
-name = "rusty"
+name = "rascal"
 version = "0.1.0"
 authors = ["Cristian Oliveira <contato@cristianoliveira.com.br>"]
+description = "A language based on Ruby/Pascal."
+license = "MIT"
+repository = "https://github.com/cristianoliveira/funzzy"
 
 [dependencies]
+docopt = "0.6"
+rustc-serialize = "0.3"

@@ -48,7 +48,7 @@ impl Kind {
                     ';' => Kind::StatementEnd,
                     '(' => Kind::GroupBegin,
                     ')' => Kind::GroupEnd,
-                    ' ' => Kind::Space,
+                    ' '|'\n' => Kind::Space,
                     '+'|'-'|'*'|'/'|'^' => Kind::Operator,
                     '0'|'1'|'2'|'3'|'4'|
                     '5'|'6'|'7'|'8'|'9' => Kind::Integer,
@@ -138,6 +138,7 @@ impl Tokenizer {
     //
     // It gets the current token without consuming it
     pub fn get(&mut self) -> Option<Token> {
+        println!("{:?}",self.current.clone());
         self.current.clone()
     }
 
@@ -146,6 +147,7 @@ impl Tokenizer {
     // It is responsible for consume the current Token validating the expected
     // token for the expression sintax
     pub fn consume(&mut self, expected_kind: Kind) -> Token {
+        println!("{:?}",self.current.clone());
         if let Some(token) = self.current.clone() {
             self.current = None;
             if token.kind != expected_kind {
@@ -215,6 +217,26 @@ impl Iterator for Tokenizer {
             }
         }
     }
+}
+
+// binary_operation
+// Resolve binary expression for the given left, operator and right operand
+pub fn binary_operation(left: Token, operator: &Token, right: Token) -> Token {
+    let operleft = if let Ok(val) = left.value.parse::<i32>() { val } else {
+        panic!("Sintax error: invalid operand: {:?}", left)
+    };
+    let operright = if let Ok(val) = right.value.parse::<i32>() { val } else {
+        panic!("Sintax error: invalid operand: {:?}", right)
+    };
+    let result = match operator.value.as_ref() {
+        "+" => operleft + operright,
+        "-" => operleft - operright,
+        "*" => operleft * operright,
+        "/" => operleft / operright,
+        _ => panic!("Sintax error: invalid operator {:?}", operator)
+    };
+
+    Token::build(left.kind, result.to_string())
 }
 
 #[test]

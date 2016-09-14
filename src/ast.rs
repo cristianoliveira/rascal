@@ -1,6 +1,16 @@
 // This module contains the Abstract Sintax Tree representations
 
-use token::{Token, Kind};
+use token::{Token, Kind, binary_operation};
+use std::collections::HashMap;
+
+struct NodeContext {
+    pub imutable_table: HashMap<String, Token>,
+    pub symbol_table: HashMap<String, Token>,
+}
+
+pub trait NodeEval {
+    fn eval(self, context: &mut NodeContext) -> Token;
+}
 
 // Node
 //

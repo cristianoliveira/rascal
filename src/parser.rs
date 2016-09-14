@@ -252,6 +252,8 @@ impl Parser {
                 self.constant()
             },
 
+            None => ast::Node::empty(),
+
             other =>
             panic!("Factor error: exptected Operator|GroupBegin|Integer|ID
                    found {:?}", other)
