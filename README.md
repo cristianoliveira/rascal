@@ -1,17 +1,34 @@
 # Rascal
-A Pascal/Ruby like interpreter in Rust
+A functional interpreted language based on Ruby/Haskell made by Rust
+
+# Use
+```bash
+rascal ./example.rl
+```
+
+# Install and run
+```bash
+git clone https://github.com/cristianoliveira/rascal.git
+cd rascal
+cargo build && cargo install
+rascal ./example.rl
+```
+
+# Motivation?
+> “If you don’t know how compilers work, then you don’t know how computers work.
+> If you’re not 100% sure whether you know how compilers work,
+> then you don’t know how they work.” — Steve Yegge
+We can say the same about interpreted languages and interpreters.
 
 # Structure
 This language is based on Pascal/Ruby and follow its structure.
 
-  * Integers: 0-9
+  * Integers: `0-9`
   * Boolean: `true`, `false`
   * Imutables variables: `imut x;`
   * Assign values: `x = 0;`
-  * Statement end: `;`
   * Blocks: `begin .. end`
   * Comparison: `==`,`!=`, `>`, `<`, `and`, `or`
-  * Return expression: `return`
   * If else: `if 1==1 begin .. else .. end`
   * Loop: `while 1==1 begin .. end`
 
