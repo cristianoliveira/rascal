@@ -25,7 +25,7 @@ pub enum Kind {
     ReAssign,
     Assign,
     ID,
-    CONST_ID,
+    CONST,
     StdOut,
     Return,
     Conditional,
@@ -98,6 +98,9 @@ impl Token {
     pub fn build(kind: Kind, value: String) -> Token {
         Token { kind: kind, value: value }
     }
+    pub fn empty(kind: Kind) -> Token {
+        Token { kind: kind, value: String::from("nil")}
+    }
 }
 
 //# Tokenizer
@@ -138,7 +141,6 @@ impl Tokenizer {
     //
     // It gets the current token without consuming it
     pub fn get(&mut self) -> Option<Token> {
-        println!("{:?}",self.current.clone());
         self.current.clone()
     }
 
@@ -147,7 +149,6 @@ impl Tokenizer {
     // It is responsible for consume the current Token validating the expected
     // token for the expression sintax
     pub fn consume(&mut self, expected_kind: Kind) -> Token {
-        println!("{:?}",self.current.clone());
         if let Some(token) = self.current.clone() {
             self.current = None;
             if token.kind != expected_kind {

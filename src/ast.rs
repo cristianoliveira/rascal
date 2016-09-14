@@ -1,16 +1,6 @@
 // This module contains the Abstract Sintax Tree representations
 
-use token::{Token, Kind, binary_operation};
-use std::collections::HashMap;
-
-struct NodeContext {
-    pub imutable_table: HashMap<String, Token>,
-    pub symbol_table: HashMap<String, Token>,
-}
-
-pub trait NodeEval {
-    fn eval(self, context: &mut NodeContext) -> Token;
-}
+use token::{Token, Kind};
 
 // Node
 //
@@ -30,6 +20,33 @@ impl Node {
         Node {
             left: Box::new(Some(left)),
             token: token,
+            right: Box::new(Some(right)),
+            conditional: Box::new(None),
+            statements: None
+        }
+    }
+    pub fn define_immutable(left: Node, right: Node) -> Self {
+        Node {
+            left: Box::new(Some(left)),
+            token: Token::build(Kind::Assign, String::from("=")),
+            right: Box::new(Some(right)),
+            conditional: Box::new(None),
+            statements: None
+        }
+    }
+    pub fn define_mutable(left: Node, right: Node) -> Self {
+        Node {
+            left: Box::new(Some(left)),
+            token: Token::build(Kind::Assign, String::from("=")),
+            right: Box::new(Some(right)),
+            conditional: Box::new(None),
+            statements: None
+        }
+    }
+    pub fn reassign(left: Node, right: Node) -> Self {
+        Node {
+            left: Box::new(Some(left)),
+            token: Token::build(Kind::ReAssign, String::new()),
             right: Box::new(Some(right)),
             conditional: Box::new(None),
             statements: None
@@ -80,7 +97,7 @@ impl Node {
             statements: Some(statements)
         }
     }
-    pub fn compound(statements: Vec<Node>) -> Self {
+    pub fn block(statements: Vec<Node>) -> Self {
         Node {
             left: Box::new(None),
             token: Token::build(Kind::Statement, String::new()),

@@ -65,11 +65,11 @@ impl Parser {
         self.tokenizer.consume(Kind::If);
         let condition = self.expr();
         self.tokenizer.consume(Kind::Begin);
-        let if_node = ast::Node::compound(self.statement_list());
+        let if_node = ast::Node::block(self.statement_list());
         let optional_elsenode =
             if let Some(Token{ kind: Kind::Else, ..}) = self.tokenizer.get() {
                 self.tokenizer.consume(Kind::Else);
-                ast::Node::compound(self.statement_list())
+                ast::Node::block(self.statement_list())
             } else {
                 ast::Node::empty()
             };
@@ -77,18 +77,18 @@ impl Parser {
         ast::Node::ifelse(condition, if_node, optional_elsenode)
     }
 
-    // compound
+    // block
     //
-    // compound is a BEGIN followed by statement_list followed by END
+    // block is a BEGIN followed by statement_list followed by END
     // Represented as context free grammar:
     // ```
-    //   compound: BEGIN statement_list END
+    //   block: BEGIN statement_list END
     // ```
-    fn compound(&mut self) -> ast::Node {
+    fn block(&mut self) -> ast::Node {
         self.tokenizer.consume(Kind::Begin);
         let statement_list = self.statement_list();
         self.tokenizer.consume(Kind::End);
-        ast::Node::compound(statement_list)
+        ast::Node::block(statement_list)
     }
 
     // statement_list
@@ -135,7 +135,7 @@ impl Parser {
             Some(Token{ kind: Kind::ID, ..}) => {
                 self.assign_statement()
             },
-            Some(Token{ kind: Kind::Begin, ..}) => self.compound(),
+            Some(Token{ kind: Kind::Begin, ..}) => self.block(),
             Some(Token{ kind: Kind::While, ..}) => self._while(),
             Some(Token{ kind: Kind::If, ..}) => self._if(),
             _ => ast::Node::empty()
@@ -150,11 +150,11 @@ impl Parser {
     //   assign_statement: constant ASSIGN expr
     // ```
     fn assign_statement(&mut self) -> ast::Node {
-        ast::Node::binary(
-            self.variable(),
-            Token::build(Kind::ReAssign,
-                         self.tokenizer.advance().consume(Kind::Assign).value),
-            self.expr())
+        let (name, _, expr) = (self.variable(),
+            self.tokenizer.advance().consume(Kind::Assign).value,
+            self.expr()
+        );
+        ast::Node::reassign(name, expr)
     }
 
     // define_statement
@@ -172,31 +172,39 @@ impl Parser {
             Some(Token{ kind: Kind:: MutableDefine , ..}) => {
                 self.tokenizer.consume(Kind::MutableDefine);
                 self.tokenizer.advance();
-                ast::Node::binary(
+
+                let (var, _, expr) = (
                     self.variable(),
                     self.tokenizer.advance().consume(Kind::Assign),
-                    self.expr())
+                    self.expr()
+                );
+
+                ast::Node::define_mutable(var, expr)
             },
             _ => {
                 self.tokenizer.consume(Kind::ImmutableDefine);
                 self.tokenizer.advance();
-                ast::Node::binary(
+
+                let (var, _, expr) = (
                     self.constant(),
                     self.tokenizer.advance().consume(Kind::Assign),
-                    self.expr())
+                    self.expr()
+                );
+
+                ast::Node::define_immutable(var, expr)
             }
         }
     }
 
     // constant
     //
-    // constant is an CONST_ID. Represented as context free grammar:
+    // constant is an CONST. Represented as context free grammar:
     // ```
-    //   constant: CONST_ID
+    //   constant: CONST
     // ```
     fn constant(&mut self) -> ast::Node {
         let token = self.tokenizer.consume(Kind::ID);
-        ast::Node::leaf(Token::build(Kind::CONST_ID, token.value))
+        ast::Node::leaf(Token::build(Kind::CONST, token.value))
     }
 
     // variable
@@ -248,7 +256,7 @@ impl Parser {
                 self.variable()
             },
 
-            Some(Token{ kind: Kind::CONST_ID, .. }) => {
+            Some(Token{ kind: Kind::CONST, .. }) => {
                 self.constant()
             },
 
@@ -322,7 +330,7 @@ impl Parser {
 
     pub fn parse(&mut self) -> ast::Node {
         match self.tokenizer.advance().get() {
-            Some(Token{kind: Kind::Begin, ..}) => self.compound(),
+            Some(Token{kind: Kind::Begin, ..}) => self.block(),
             _ => self.expr()
         }
     }
@@ -413,7 +421,7 @@ fn it_parses_simple_block() {
     let assign_token = Token{ kind: Kind::Assign, value: String::from("=")};
     let assign = ast::Node::binary(var, assign_token, expr);
 
-    let comp = ast::Node::compound(vec![assign]);
+    let comp = ast::Node::block(vec![assign]);
     assert_eq!(comp, parser.parse());
 }
 
@@ -425,7 +433,7 @@ fn it_parses_multiple_statements() {
     let assign_token = Token{ kind: Kind::Assign, value: String::from("=")};
 
 
-    let yvar = ast::Node::leaf(Token{ kind: Kind::CONST_ID, value: String::from("y")});
+    let yvar = ast::Node::leaf(Token{ kind: Kind::CONST, value: String::from("y")});
     let yvalue = ast::Node::leaf(Token{ kind: Kind::Integer, value: String::from("100")});
     let yassign = ast::Node::binary(yvar, assign_token.clone(), yvalue);
 
@@ -435,7 +443,7 @@ fn it_parses_multiple_statements() {
     let xvar = ast::Node::leaf(Token{ kind: Kind::ID, value: String::from("x")});
     let xassign = ast::Node::binary(xvar, assign_token, expr);
 
-    let comp = ast::Node::compound(vec![xassign, yassign]);
+    let comp = ast::Node::block(vec![xassign, yassign]);
     assert_eq!(comp, parser.parse());
 }
 

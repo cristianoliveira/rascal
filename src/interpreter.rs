@@ -47,108 +47,98 @@ impl Interpreter {
 
     pub fn eval_tree(&mut self, tree: Node) -> Token {
         let Node{ token, statements, conditional, left, right } = tree;
-        match (*left, *right, *conditional) {
+        match (token.kind.clone(), *left, *right, *conditional) {
 
-            (Some(lnode), Some(rnode), conditional) => match token.kind {
-                Kind::Operator =>
-                    binary_operation(self.eval_tree(lnode),
-                                     &token,
-                                     self.eval_tree(rnode)),
+            (Kind::Conditional, Some(lnode), Some(rnode), Some(conditional)) => {
+                let condition = self.eval_tree(conditional);
 
-                Kind::Comparison =>
-                    binary_comparison(self.eval_tree(lnode),
-                                      &token,
-                                      self.eval_tree(rnode)),
+                if truthy(condition) {
+                    self.eval_tree(lnode)
+                } else {
+                    self.eval_tree(rnode)
+                }
+            },
 
-                Kind::Assign => {
-                    let value = self.eval_tree(rnode);
-                    let Token{ kind, value: name } = lnode.token;
+            (Kind::Operator, Some(lnode), Some(rnode), None) => {
+                binary_operation(
+                    self.eval_tree(lnode), &token, self.eval_tree(rnode)
+                )
+            },
 
-                    if kind == Kind::CONST_ID {
-                        self.imutable_table.insert(name, value.clone());
-                    } else {
-                        self.symbol_table.insert(name, value.clone());
-                    }
-                    value
-                },
+            (Kind::Comparison, Some(lnode), Some(rnode), None) =>
+                    binary_comparison(
+                        self.eval_tree(lnode), &token, self.eval_tree(rnode)
+                    ),
 
-                Kind::ReAssign => {
-                    let value = self.eval_tree(rnode);
-                    let Token{ value: name, ..} = lnode.token;
+            (Kind::Assign, Some(lnode), Some(rnode), None) => {
+                let value = self.eval_tree(rnode);
+                let Token{ kind, value: name } = lnode.token;
 
-                    if self.imutable_table.contains_key(&*name) {
-                        panic!("Value error: invalid assign imutable {}", name)
-                    }
-
+                if kind == Kind::CONST {
+                    self.imutable_table.insert(name, value.clone());
+                } else {
                     self.symbol_table.insert(name, value.clone());
-                    value
-                },
+                }
+                value
+            },
 
-                Kind::Conditional=> {
-                    let condition = self.eval_tree(conditional.unwrap());
+            (Kind::ReAssign, Some(lnode), Some(rnode), None) => {
+                let value = self.eval_tree(rnode);
+                let Token{ value: name, ..} = lnode.token;
 
-                    if truthy(condition) {
-                        self.eval_tree(lnode)
-                    } else {
-                        self.eval_tree(rnode)
-                    }
+                if self.imutable_table.contains_key(&*name) {
+                    panic!("Value error: invalid assign imutable {}", name)
                 }
 
-                _ => self.eval_tree(rnode)
+                self.symbol_table.insert(name, value.clone());
+                value
             },
 
-            (Some(lnode), None, _) => self.eval_tree(lnode),
 
-            (None, Some(rnode), _) => match token.kind {
-                Kind::Operator =>
-                    unary_operation(token, self.eval_tree(rnode)),
+            (Kind::Operator, None, Some(rnode), None) =>
+                unary_operation(token, self.eval_tree(rnode)),
 
-                Kind::Return => self.eval_tree(rnode),
+            (Kind::Return, None, Some(rnode), None) => self.eval_tree(rnode),
 
-                _ => self.eval_tree(rnode)
+            (Kind::Statement, None, None, None) => {
+                if statements.is_some() {
+                    statements.unwrap().iter()
+                        .map(|n| self.eval_tree(n.clone()))
+                        .fold(token, |_, t| t)
+                } else {
+                    Token::build(Kind::End, String::from("nil"))
+                }
             },
 
-            (None, None, conditional) => match token.kind {
-                Kind::Statement => {
-                    if statements.is_some() {
-                        statements.unwrap().iter()
-                                           .map(|n| self.eval_tree(n.clone()))
-                                           .fold(token, |_, t| t)
-                    } else {
-                        Token::build(Kind::End, String::from("nil"))
-                    }
-                },
+            (Kind::Conditional, None, None, conditional) => {
+                let mut condition = self.eval_tree(conditional.clone().unwrap());
 
-                Kind::Conditional => {
-                    let mut condition = self.eval_tree(conditional.clone().unwrap());
+                while truthy(condition) {
+                    let _ = statements.clone()
+                        .unwrap()
+                        .iter()
+                        .map(|n| self.eval_tree(n.clone()))
+                        .fold(token.clone(), |_, t| t);
+                    condition = self.eval_tree(conditional.clone().unwrap());
+                }
 
-                    while truthy(condition) {
-                        let _ = statements.clone()
-                            .unwrap()
-                            .iter()
-                            .map(|n| self.eval_tree(n.clone()))
-                            .fold(token.clone(), |_, t| t);
-                        condition = self.eval_tree(conditional.clone().unwrap());
-                    }
+                return Token::build(Kind::Empty, String::from("nil"))
+            },
 
-                    return Token::build(Kind::Empty, String::from("nil"))
-                },
-
-                Kind::ID =>
-                    match self.imutable_table.get(&token.value) {
-                        Some(value) => return value.clone(),
-                        None =>
-                            match self.symbol_table.get(&token.value) {
-                                Some(value) => return value.clone(),
-                                None =>
+            (Kind::ID, None, None, None) =>
+                match self.imutable_table.get(&token.value) {
+                    Some(value) => return value.clone(),
+                    None =>
+                        match self.symbol_table.get(&token.value) {
+                            Some(value) => return value.clone(),
+                            None =>
                                 panic!("Interpreter error: undeclared variable")
                         }
-                    },
+                },
 
-                Kind::Empty => token,
-
-                _ => token
-            }
+            (_, Some(lnode), None, None) => self.eval_tree(lnode),
+            (_, None, Some(rnode), None) => self.eval_tree(rnode),
+            _ => token
         }
     }
 }
