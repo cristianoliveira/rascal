@@ -7,4 +7,4 @@
 - name: run my tests
   run: 'cargo test'
   when:
-    change: 'src/**'
+    change: ['src/**', 'tests/**']

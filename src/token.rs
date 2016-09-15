@@ -20,6 +20,7 @@ pub enum Kind {
     Empty,
     Statement,
     StatementEnd,
+    FunctionDefine,
     ImmutableDefine,
     MutableDefine,
     ReAssign,
@@ -64,6 +65,7 @@ impl Kind {
     pub fn reserved(word: &String) -> Option<Kind> {
         match word.as_ref() {
             // Blocks Statements
+            "fn" => Some(Kind::FunctionDefine),
             "imut" => Some(Kind::ImmutableDefine),
             "mut" => Some(Kind::MutableDefine),
             "=" => Some(Kind::Assign),

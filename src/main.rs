@@ -50,12 +50,8 @@ fn main() {
         Args { flag_r: true, ..} => {
             let stdin = io::stdin();
             while let Some(line) = stdin.lock().lines().next() {
-                if let Ok(expr) = line {
-                    let tokenizer = token::Tokenizer::new(expr);
-                    let mut parser = parser::Parser::new(tokenizer);
-                    let mut interpreter = interpreter::Interpreter::new();
-                    let result = interpreter.eval(parser.parse());
-                    println!(">> {}", result);
+                if let Ok(source_code) = line {
+                    println!(">> {}", eval(source_code));
                 }
             }
         },
@@ -64,11 +60,14 @@ fn main() {
             let mut f = File::open(&arg_source[0]).unwrap();
             let mut source_code = String::new();
             let _ = f.read_to_string(&mut source_code);
-            let tokenizer = token::Tokenizer::new(source_code);
-            let mut parser = parser::Parser::new(tokenizer);
-            let mut interpreter = interpreter::Interpreter::new();
-            let result = interpreter.eval(parser.parse());
-            println!(">> {}", result);
+            println!(">> {}", eval(source_code));
         }
     }
+}
+
+pub fn eval(source: String) -> String {
+    let tokenizer = token::Tokenizer::new(source);
+    let mut parser = parser::Parser::new(tokenizer);
+    let mut interpreter = interpreter::Interpreter::new();
+    interpreter.eval(parser.parse())
 }

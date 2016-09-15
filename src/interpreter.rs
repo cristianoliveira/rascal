@@ -87,7 +87,11 @@ impl Interpreter {
                 let Token{ value: name, ..} = lnode.token;
 
                 if self.imutable_table.contains_key(&*name) {
-                    panic!("Value error: invalid assign imutable {}", name)
+                    panic!("Value error: invalid assign imutable var: {}", name)
+                }
+
+                if !self.symbol_table.contains_key(&*name) {
+                    panic!("Value error: used before declared var: {}", name)
                 }
 
                 self.symbol_table.insert(name, value.clone());
@@ -373,80 +377,3 @@ fn it_eval_block_retrieve_vars_from_symbol_table() {
     assert_eq!("15", interpreter.symbol_table["y"].value);
 }
 
-#[test]
-fn it_eval_block_retrieve_eturn_statement() {
-    let text = "begin mut x = 10; mut y = x + 5; return y + 5 end";
-    let tokenizer = Tokenizer::new(String::from(text));
-    let mut parser = Parser::new(tokenizer);
-    let mut interpreter = Interpreter::new();
-    let result = interpreter.eval(parser.parse());
-
-    assert_eq!("20", result);
-}
-
-#[test]
-fn it_eval_block_bolean_block() {
-    let text = "begin mut x = 1; y = 2; return y == x end";
-    let tokenizer = Tokenizer::new(String::from(text));
-    let mut parser = Parser::new(tokenizer);
-    let mut interpreter = Interpreter::new();
-    let result = interpreter.eval(parser.parse());
-
-    assert_eq!("false", result);
-}
-
-#[test]
-fn it_eval_while_blocks() {
-    let text = "begin mut y = 0; while y < 4 begin y = y + 1 end; return y == 4 end";
-    let tokenizer = Tokenizer::new(String::from(text));
-    let mut parser = Parser::new(tokenizer);
-    let mut interpreter = Interpreter::new();
-    let result = interpreter.eval(parser.parse());
-
-    assert_eq!("true", result);
-}
-
-#[test]
-fn it_eval_if_blocks() {
-    let text = "begin mut y = 0; if y < 4 begin y = 4 end; return y == 4 end";
-    let tokenizer = Tokenizer::new(String::from(text));
-    let mut parser = Parser::new(tokenizer);
-    let mut interpreter = Interpreter::new();
-    let result = interpreter.eval(parser.parse());
-
-    assert_eq!("true", result);
-}
-
-#[test]
-#[should_panic]
-fn it_validate_immutable() {
-    let text = "begin imut y = 0; y = 1; return y end";
-    let tokenizer = Tokenizer::new(String::from(text));
-    let mut parser = Parser::new(tokenizer);
-    let mut interpreter = Interpreter::new();
-    let result = interpreter.eval(parser.parse());
-
-    assert_eq!("42", result);
-}
-
-#[test]
-fn it_accepts_mutable() {
-    let text = "begin mut y = 0; y = 1; return y end";
-    let tokenizer = Tokenizer::new(String::from(text));
-    let mut parser = Parser::new(tokenizer);
-    let mut interpreter = Interpreter::new();
-    let result = interpreter.eval(parser.parse());
-
-    assert_eq!("1", result);
-}
-
-#[test]
-fn it_eval_ifelse_blocks() {
-    let text = "begin mut y = 0; if false begin y = 4 else y = 42 end; return y end";
-    let tokenizer = Tokenizer::new(String::from(text));
-    let mut parser = Parser::new(tokenizer);
-    let mut interpreter = Interpreter::new();
-    let result = interpreter.eval(parser.parse());
-
-    assert_eq!("42", result);
-}
