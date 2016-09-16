@@ -1,5 +1,5 @@
 use token::{Token, Kind, Tokenizer};
-use ast::{Node, Operation};
+use ast::{Node, Operation, Var};
 use parser::Parser;
 use std::collections::HashMap;
 
@@ -46,10 +46,10 @@ impl Interpreter {
     }
 
     pub fn eval_tree(&mut self, tree: Node) -> Token {
-        let Node{operation, token, statements, conditional, left, right} = tree;
-        match (*operation, token.kind.clone(), *left, *right, *conditional) {
+        let Node{operation, token} = tree;
+        match *operation.clone() {
 
-            (Operation::IfElse(conditional, lnode, rnode), _, _, _, _) => {
+            Operation::IfElse(conditional, lnode, rnode) => {
                 let condition = self.eval_tree(conditional);
 
                 if truthy(condition) {
@@ -59,18 +59,16 @@ impl Interpreter {
                 }
             },
 
-            (_, Kind::Operator, Some(lnode), Some(rnode), None) => {
+            Operation::Binary(lnode, operator, rnode) => {
                 binary_operation(
-                    self.eval_tree(lnode), &token, self.eval_tree(rnode)
+                    self.eval_tree(lnode), operator, self.eval_tree(rnode)
                 )
             },
 
-            (_,Kind::Comparison, Some(lnode), Some(rnode), None) =>
-                    binary_comparison(
-                        self.eval_tree(lnode), &token, self.eval_tree(rnode)
-                    ),
+            Operation::Comparison(lnode, operator, rnode) =>
+                binary_comparison( self.eval_tree(lnode), operator, self.eval_tree(rnode)),
 
-            (Operation::DefineImut(l, r), _, _, _, _) => {
+            Operation::DefineImut(l, r) => {
                 let value = self.eval_tree(r);
                 let Token{ kind, value: name } = l.token;
 
@@ -78,7 +76,7 @@ impl Interpreter {
                 value
             },
 
-            (Operation::DefineVar(l, r), _, _, _, _) => {
+            Operation::DefineVar(l, r) => {
                 let value = self.eval_tree(r);
                 let Token{ kind, value: name } = l.token;
 
@@ -86,7 +84,7 @@ impl Interpreter {
                 value
             },
 
-            (Operation::ReAssign(l, r), _, _, _, _) => {
+            Operation::ReAssign(l, r) => {
                 let value = self.eval_tree(r);
                 let Token{ value: name, ..} = l.token;
 
@@ -102,20 +100,19 @@ impl Interpreter {
                 value
             },
 
-
-            (Operation::NegUnary(r),_, _, _, _) => {
+            Operation::NegUnary(r) => {
                 unary_operation("-", self.eval_tree(r))
             },
 
-            (_,Kind::Return, None, Some(rnode), None) => self.eval_tree(rnode),
+            Operation::Return(node) => self.eval_tree(node),
 
-            (Operation::Block(statements),_, _, _, _) => {
+            Operation::Block(statements) => {
                 statements.iter()
                     .map(|n| self.eval_tree(n.clone()))
                     .fold(token, |_, t| t)
             },
 
-            (Operation::Loop(conditional, block),_, _, _, _) => {
+            Operation::Loop(conditional, block) => {
                 let mut condition = self.eval_tree(conditional.clone());
 
                 while truthy(condition) {
@@ -126,19 +123,17 @@ impl Interpreter {
                 return Token::build(Kind::Empty, String::from("nil"))
             },
 
-            (_,Kind::ID, None, None, None) =>
-                match self.imutable_table.get(&token.value) {
+            Operation::Identifier(name) =>
+                match self.imutable_table.get(&*name) {
                     Some(value) => return value.clone(),
                     None =>
-                        match self.symbol_table.get(&token.value) {
+                        match self.symbol_table.get(&*name) {
                             Some(value) => return value.clone(),
                             None =>
                                 panic!("Interpreter error: undeclared variable")
                         }
                 },
 
-            (_,_, Some(lnode), None, None) => self.eval_tree(lnode),
-            (_,_, None, Some(rnode), None) => self.eval_tree(rnode),
             _ => token
         }
     }
@@ -161,14 +156,14 @@ fn unary_operation(operator: &str, operand: Token) -> Token {
 
 // binary_operation
 // Resolve binary expression for the given left, operator and right operand
-fn binary_operation(left: Token, operator: &Token, right: Token) -> Token {
+fn binary_operation(left: Token, operator: String, right: Token) -> Token {
     let operleft = if let Ok(val) = left.value.parse::<i32>() { val } else {
         panic!("Sintax error: invalid operand: {:?}", left)
     };
     let operright = if let Ok(val) = right.value.parse::<i32>() { val } else {
         panic!("Sintax error: invalid operand: {:?}", right)
     };
-    let result = match operator.value.as_ref() {
+    let result = match operator.as_ref() {
         "+" => operleft + operright,
         "-" => operleft - operright,
         "*" => operleft * operright,
@@ -181,7 +176,7 @@ fn binary_operation(left: Token, operator: &Token, right: Token) -> Token {
 
 // binary_operation
 // Resolve binary expression for the given left, operator and right operand
-fn binary_comparison(left: Token, operator: &Token, right: Token) -> Token {
+fn binary_comparison(left: Token, operator: String, right: Token) -> Token {
     let bleft = left.value.replace("true","1").replace("false","0");
     let bright = right.value.replace("true","1").replace("false","0");
 
@@ -192,7 +187,7 @@ fn binary_comparison(left: Token, operator: &Token, right: Token) -> Token {
         panic!("Sintax error: invalid operand: {:?}", right)
     };
 
-    let result = match operator.value.as_ref() {
+    let result = match operator.as_ref() {
         "==" => operleft == operright,
         "!=" => operleft != operright,
         "<" => operleft < operright,
@@ -208,14 +203,14 @@ fn binary_comparison(left: Token, operator: &Token, right: Token) -> Token {
 fn truthy(condition: Token) -> bool {
     binary_comparison(
         condition,
-        &Token::build(Kind::Comparison, String::from("==")),
+        String::from("=="),
         Token::build(Kind::Comparison, String::from("true"))).value == "true"
 }
 
 #[test]
 fn it_eval_tree_leaf() {
     let token = Token::build(Kind::Integer, String::from("10"));
-    let leaf = Node::leaf(token);
+    let leaf = Node::constant(token);
 
     assert_eq!("10", Interpreter::new().eval(leaf))
 }
@@ -223,9 +218,9 @@ fn it_eval_tree_leaf() {
 #[test]
 fn it_eval_the_node_binary_operation() {
     // 3+5
-    let left = Node::leaf(Token::build(Kind::Integer, String::from("3")));
+    let left = Node::constant(Token::build(Kind::Integer, String::from("3")));
     let operator = Token::build(Kind::Operator, String::from("+"));
-    let right = Node::leaf(Token::build(Kind::Integer, String::from("5")));
+    let right = Node::constant(Token::build(Kind::Integer, String::from("5")));
     let node = Node::binary(left, operator, right);
 
     assert_eq!("8", Interpreter::new().eval(node))
@@ -234,13 +229,13 @@ fn it_eval_the_node_binary_operation() {
 #[test]
 fn it_eval_complex_tree() {
     // 5+5*3
-    let left = Node::leaf(Token::build(Kind::Integer, String::from("3")));
+    let left = Node::constant(Token::build(Kind::Integer, String::from("3")));
     let operator = Token::build(Kind::Operator, String::from("*"));
-    let right = Node::leaf(Token::build(Kind::Integer, String::from("5")));
+    let right = Node::constant(Token::build(Kind::Integer, String::from("5")));
     let plusnode = Node::binary(left, operator, right);
 
     let operator = Token::build(Kind::Operator, String::from("+"));
-    let sumright = Node::leaf(Token::build(Kind::Integer, String::from("5")));
+    let sumright = Node::constant(Token::build(Kind::Integer, String::from("5")));
     let sumnode = Node::binary(plusnode, operator, sumright);
 
     assert_eq!("20", Interpreter::new().eval(sumnode))
@@ -249,12 +244,12 @@ fn it_eval_complex_tree() {
 #[test]
 fn it_eval_unary_operations() {
     // 2 -- 2
-    let rnode = Node::leaf(Token::build(Kind::Integer, String::from("2")));
+    let rnode = Node::constant(Token::build(Kind::Integer, String::from("2")));
     let negative_op = Token::build(Kind::Operator, String::from("-"));
     let unarynode = Node::unary(negative_op, rnode);
 
     let operator = Token::build(Kind::Operator, String::from("-"));
-    let left = Node::leaf(Token::build(Kind::Integer, String::from("2")));
+    let left = Node::constant(Token::build(Kind::Integer, String::from("2")));
     let sumnode = Node::binary(left, operator, unarynode);
 
     assert_eq!("4", Interpreter::new().eval(sumnode))
