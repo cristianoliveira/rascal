@@ -435,7 +435,7 @@ fn it_parses_multiple_statements() {
 
     let yvar = ast::Node::leaf(Token{ kind: Kind::CONST, value: String::from("y")});
     let yvalue = ast::Node::leaf(Token{ kind: Kind::Integer, value: String::from("100")});
-    let yassign = ast::Node::binary(yvar, assign_token.clone(), yvalue);
+    let yassign = ast::Node::define_immutable(yvar, yvalue);
 
     let expr = test_node_builder(String::from("10"),
                                  String::from("+"),

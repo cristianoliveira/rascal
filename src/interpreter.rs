@@ -1,5 +1,5 @@
 use token::{Token, Kind, Tokenizer};
-use ast::Node;
+use ast::{Node, Operation};
 use parser::Parser;
 use std::collections::HashMap;
 
@@ -46,10 +46,10 @@ impl Interpreter {
     }
 
     pub fn eval_tree(&mut self, tree: Node) -> Token {
-        let Node{ token, statements, conditional, left, right } = tree;
-        match (token.kind.clone(), *left, *right, *conditional) {
+        let Node{operation, token, statements, conditional, left, right} = tree;
+        match (*operation, token.kind.clone(), *left, *right, *conditional) {
 
-            (Kind::Conditional, Some(lnode), Some(rnode), Some(conditional)) => {
+            (_,Kind::Conditional, Some(lnode), Some(rnode), Some(conditional)) => {
                 let condition = self.eval_tree(conditional);
 
                 if truthy(condition) {
@@ -59,18 +59,30 @@ impl Interpreter {
                 }
             },
 
-            (Kind::Operator, Some(lnode), Some(rnode), None) => {
+            (_, Kind::Operator, Some(lnode), Some(rnode), None) => {
                 binary_operation(
                     self.eval_tree(lnode), &token, self.eval_tree(rnode)
                 )
             },
 
-            (Kind::Comparison, Some(lnode), Some(rnode), None) =>
+            (_,Kind::Comparison, Some(lnode), Some(rnode), None) =>
                     binary_comparison(
                         self.eval_tree(lnode), &token, self.eval_tree(rnode)
                     ),
 
-            (Kind::Assign, Some(lnode), Some(rnode), None) => {
+            (Operation::DefineImut(l, r), Kind::Assign, Some(lnode), Some(rnode), None) => {
+                let value = self.eval_tree(r);
+                let Token{ kind, value: name } = l.token;
+
+                if kind == Kind::CONST {
+                    self.imutable_table.insert(name, value.clone());
+                } else {
+                    self.symbol_table.insert(name, value.clone());
+                }
+                value
+            },
+
+            (_,Kind::Assign, Some(lnode), Some(rnode), None) => {
                 let value = self.eval_tree(rnode);
                 let Token{ kind, value: name } = lnode.token;
 
@@ -82,7 +94,7 @@ impl Interpreter {
                 value
             },
 
-            (Kind::ReAssign, Some(lnode), Some(rnode), None) => {
+            (_,Kind::ReAssign, Some(lnode), Some(rnode), None) => {
                 let value = self.eval_tree(rnode);
                 let Token{ value: name, ..} = lnode.token;
 
@@ -99,12 +111,12 @@ impl Interpreter {
             },
 
 
-            (Kind::Operator, None, Some(rnode), None) =>
+            (_,Kind::Operator, None, Some(rnode), None) =>
                 unary_operation(token, self.eval_tree(rnode)),
 
-            (Kind::Return, None, Some(rnode), None) => self.eval_tree(rnode),
+            (_,Kind::Return, None, Some(rnode), None) => self.eval_tree(rnode),
 
-            (Kind::Statement, None, None, None) => {
+            (_,Kind::Statement, None, None, None) => {
                 if statements.is_some() {
                     statements.unwrap().iter()
                         .map(|n| self.eval_tree(n.clone()))
@@ -114,7 +126,7 @@ impl Interpreter {
                 }
             },
 
-            (Kind::Conditional, None, None, conditional) => {
+            (_,Kind::Conditional, None, None, conditional) => {
                 let mut condition = self.eval_tree(conditional.clone().unwrap());
 
                 while truthy(condition) {
@@ -129,7 +141,7 @@ impl Interpreter {
                 return Token::build(Kind::Empty, String::from("nil"))
             },
 
-            (Kind::ID, None, None, None) =>
+            (_,Kind::ID, None, None, None) =>
                 match self.imutable_table.get(&token.value) {
                     Some(value) => return value.clone(),
                     None =>
@@ -140,8 +152,8 @@ impl Interpreter {
                         }
                 },
 
-            (_, Some(lnode), None, None) => self.eval_tree(lnode),
-            (_, None, Some(rnode), None) => self.eval_tree(rnode),
+            (_,_, Some(lnode), None, None) => self.eval_tree(lnode),
+            (_,_, None, Some(rnode), None) => self.eval_tree(rnode),
             _ => token
         }
     }
