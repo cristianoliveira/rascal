@@ -22,6 +22,10 @@ pub enum Operation {
     DefineImut(Node, Node),
     DefineVar(Node, Node),
     ReAssign(Node, Node),
+    NegUnary(Node),
+    IfElse(Node, Node, Node),
+    Loop(Node, Node),
+    Block(Vec<Node>),
     Empty
 }
 
@@ -63,7 +67,7 @@ impl Node {
     }
     pub fn define_mutable(left: Node, right: Node) -> Self {
         Node {
-            operation: Box::new(Operation::Empty),
+            operation: Box::new(Operation::DefineVar(left.clone(), right.clone())),
             left: Box::new(Some(left)),
             token: Token::build(Kind::Assign, String::from("=")),
             right: Box::new(Some(right)),
@@ -73,7 +77,7 @@ impl Node {
     }
     pub fn reassign(left: Node, right: Node) -> Self {
         Node {
-            operation: Box::new(Operation::Empty),
+            operation: Box::new(Operation::ReAssign(left.clone(), right.clone())),
             left: Box::new(Some(left)),
             token: Token::build(Kind::ReAssign, String::new()),
             right: Box::new(Some(right)),
@@ -93,10 +97,10 @@ impl Node {
     }
     pub fn unary(token: Token, node: Node) -> Self {
         Node {
-            operation: Box::new(Operation::Empty),
+            operation: Box::new(Operation::NegUnary(node.clone())),
             left: Box::new(None),
             token: token,
-            right: Box::new(Some(node)),
+            right: Box::new(None),
             conditional: Box::new(None),
             statements: None
         }
@@ -113,32 +117,32 @@ impl Node {
     }
     pub fn ifelse(condition: Node, if_node: Node, else_node: Node) -> Self {
         Node {
-            operation: Box::new(Operation::Empty),
-            left: Box::new(Some(if_node)),
-            token: Token::build(Kind::Conditional, String::new()),
-            right: Box::new(Some(else_node)),
-            conditional: Box::new(Some(condition)),
-            statements: None
-        }
-    }
-    pub fn conditional(node:Node, statements: Vec<Node>) -> Self {
-        Node {
-            operation: Box::new(Operation::Empty),
+            operation: Box::new(Operation::IfElse(condition, if_node, else_node)),
             left: Box::new(None),
             token: Token::build(Kind::Conditional, String::new()),
             right: Box::new(None),
-            conditional: Box::new(Some(node)),
-            statements: Some(statements)
+            conditional: Box::new(None),
+            statements: None
+        }
+    }
+    pub fn conditional(node:Node, statements: Node) -> Self {
+        Node {
+            operation: Box::new(Operation::Loop(node, statements)),
+            left: Box::new(None),
+            token: Token::build(Kind::Conditional, String::new()),
+            right: Box::new(None),
+            conditional: Box::new(None),
+            statements: None
         }
     }
     pub fn block(statements: Vec<Node>) -> Self {
         Node {
-            operation: Box::new(Operation::Empty),
+            operation: Box::new(Operation::Block(statements)),
             left: Box::new(None),
             token: Token::build(Kind::Statement, String::new()),
             right: Box::new(None),
             conditional: Box::new(None),
-            statements: Some(statements)
+            statements: None
         }
     }
     pub fn empty() -> Self {

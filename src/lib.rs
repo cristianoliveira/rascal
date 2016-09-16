@@ -2,7 +2,6 @@ mod token;
 mod interpreter;
 mod ast;
 mod parser;
-mod types;
 
 pub fn eval(source: String) -> String {
     let tokenizer = token::Tokenizer::new(source);

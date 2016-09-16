@@ -46,10 +46,8 @@ impl Parser {
     fn _while(&mut self) -> ast::Node {
         self.tokenizer.consume(Kind::While);
         let conditional = self.expr();
-        self.tokenizer.consume(Kind::Begin);
-        let statement_list = self.statement_list();
-        self.tokenizer.consume(Kind::End);
-        ast::Node::conditional(conditional, statement_list)
+        let block = self.block();
+        ast::Node::conditional(conditional, block)
     }
 
     // if
@@ -419,7 +417,7 @@ fn it_parses_simple_block() {
 
     let var = ast::Node::leaf(Token{ kind: Kind::ID, value: String::from("x")});
     let assign_token = Token{ kind: Kind::Assign, value: String::from("=")};
-    let assign = ast::Node::binary(var, assign_token, expr);
+    let assign = ast::Node::define_mutable(var, expr);
 
     let comp = ast::Node::block(vec![assign]);
     assert_eq!(comp, parser.parse());
@@ -441,7 +439,7 @@ fn it_parses_multiple_statements() {
                                  String::from("+"),
                                  String::from("5"));
     let xvar = ast::Node::leaf(Token{ kind: Kind::ID, value: String::from("x")});
-    let xassign = ast::Node::binary(xvar, assign_token, expr);
+    let xassign = ast::Node::define_mutable(xvar, expr);
 
     let comp = ast::Node::block(vec![xassign, yassign]);
     assert_eq!(comp, parser.parse());

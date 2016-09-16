@@ -49,7 +49,7 @@ impl Interpreter {
         let Node{operation, token, statements, conditional, left, right} = tree;
         match (*operation, token.kind.clone(), *left, *right, *conditional) {
 
-            (_,Kind::Conditional, Some(lnode), Some(rnode), Some(conditional)) => {
+            (Operation::IfElse(conditional, lnode, rnode), _, _, _, _) => {
                 let condition = self.eval_tree(conditional);
 
                 if truthy(condition) {
@@ -70,33 +70,25 @@ impl Interpreter {
                         self.eval_tree(lnode), &token, self.eval_tree(rnode)
                     ),
 
-            (Operation::DefineImut(l, r), Kind::Assign, Some(lnode), Some(rnode), None) => {
+            (Operation::DefineImut(l, r), _, _, _, _) => {
                 let value = self.eval_tree(r);
                 let Token{ kind, value: name } = l.token;
 
-                if kind == Kind::CONST {
-                    self.imutable_table.insert(name, value.clone());
-                } else {
-                    self.symbol_table.insert(name, value.clone());
-                }
+                self.imutable_table.insert(name, value.clone());
                 value
             },
 
-            (_,Kind::Assign, Some(lnode), Some(rnode), None) => {
-                let value = self.eval_tree(rnode);
-                let Token{ kind, value: name } = lnode.token;
+            (Operation::DefineVar(l, r), _, _, _, _) => {
+                let value = self.eval_tree(r);
+                let Token{ kind, value: name } = l.token;
 
-                if kind == Kind::CONST {
-                    self.imutable_table.insert(name, value.clone());
-                } else {
-                    self.symbol_table.insert(name, value.clone());
-                }
+                self.symbol_table.insert(name, value.clone());
                 value
             },
 
-            (_,Kind::ReAssign, Some(lnode), Some(rnode), None) => {
-                let value = self.eval_tree(rnode);
-                let Token{ value: name, ..} = lnode.token;
+            (Operation::ReAssign(l, r), _, _, _, _) => {
+                let value = self.eval_tree(r);
+                let Token{ value: name, ..} = l.token;
 
                 if self.imutable_table.contains_key(&*name) {
                     panic!("Value error: invalid assign imutable var: {}", name)
@@ -111,31 +103,24 @@ impl Interpreter {
             },
 
 
-            (_,Kind::Operator, None, Some(rnode), None) =>
-                unary_operation(token, self.eval_tree(rnode)),
+            (Operation::NegUnary(r),_, _, _, _) => {
+                unary_operation("-", self.eval_tree(r))
+            },
 
             (_,Kind::Return, None, Some(rnode), None) => self.eval_tree(rnode),
 
-            (_,Kind::Statement, None, None, None) => {
-                if statements.is_some() {
-                    statements.unwrap().iter()
-                        .map(|n| self.eval_tree(n.clone()))
-                        .fold(token, |_, t| t)
-                } else {
-                    Token::build(Kind::End, String::from("nil"))
-                }
+            (Operation::Block(statements),_, _, _, _) => {
+                statements.iter()
+                    .map(|n| self.eval_tree(n.clone()))
+                    .fold(token, |_, t| t)
             },
 
-            (_,Kind::Conditional, None, None, conditional) => {
-                let mut condition = self.eval_tree(conditional.clone().unwrap());
+            (Operation::Loop(conditional, block),_, _, _, _) => {
+                let mut condition = self.eval_tree(conditional.clone());
 
                 while truthy(condition) {
-                    let _ = statements.clone()
-                        .unwrap()
-                        .iter()
-                        .map(|n| self.eval_tree(n.clone()))
-                        .fold(token.clone(), |_, t| t);
-                    condition = self.eval_tree(conditional.clone().unwrap());
+                    let _ = self.eval_tree(block.clone());
+                    condition = self.eval_tree(conditional.clone());
                 }
 
                 return Token::build(Kind::Empty, String::from("nil"))
@@ -161,11 +146,11 @@ impl Interpreter {
 
 // unary_operation
 // Resolves the unary operations Example: --1 == 1, 1++-1==0
-fn unary_operation(operator: Token, operand: Token) -> Token {
+fn unary_operation(operator: &str, operand: Token) -> Token {
     let ioperand = if let Ok(val) = operand.value.parse::<i32>() { val } else {
         panic!("Sintax error: invalid unary operand {:?}", operand)
     };
-    let result = match operator.value.as_ref() {
+    let result = match operator.as_ref() {
         "+" => ioperand,
         "-" => -(ioperand),
         _ => panic!("Sintax error: invalid unary operator {:?}", operator)
