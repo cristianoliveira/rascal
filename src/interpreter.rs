@@ -46,7 +46,7 @@ impl Interpreter {
     }
 
     pub fn eval_tree(&mut self, tree: Node) -> String {
-        let Node{operation, token} = tree;
+        let Node{operation, value} = tree;
         match *operation.clone() {
             Operation::IfElse(conditional, lnode, rnode) => {
                 let condition = self.eval_tree(conditional);
@@ -68,25 +68,25 @@ impl Interpreter {
                 binary_comparison(
                     self.eval_tree(lnode), operator, self.eval_tree(rnode)),
 
-            Operation::DefineImut(l, r) => {
-                let value = self.eval_tree(r);
-                let Token{ kind, value: name } = l.token;
+            Operation::DefineImut(lnode, rnode) => {
+                let name = lnode.value;
+                let value = self.eval_tree(rnode);
 
                 self.imutable_table.insert(name, value.clone());
                 value
             },
 
-            Operation::DefineVar(l, r) => {
-                let value = self.eval_tree(r);
-                let Token{ kind, value: name } = l.token;
+            Operation::DefineVar(lnode, rnode) => {
+                let name = lnode.value;
+                let value = self.eval_tree(rnode);
 
                 self.symbol_table.insert(name, value.clone());
                 value
             },
 
-            Operation::ReAssign(l, r) => {
-                let value = self.eval_tree(r);
-                let Token{ value: name, ..} = l.token;
+            Operation::ReAssign(lnode, rnode) => {
+                let name = lnode.value;
+                let value = self.eval_tree(rnode);
 
                 if self.imutable_table.contains_key(&*name) {
                     panic!("Value error: invalid assign imutable var: {}", name)
@@ -100,8 +100,8 @@ impl Interpreter {
                 value
             },
 
-            Operation::NegUnary(r) => {
-                unary_operation("-", self.eval_tree(r))
+            Operation::NegUnary(node) => {
+                unary_operation("-", self.eval_tree(node))
             },
 
             Operation::Return(node) => self.eval_tree(node),
@@ -134,7 +134,9 @@ impl Interpreter {
                         }
                 },
 
-            _ => token.value
+            Operation::Constant(var) => var.to_string(),
+
+            _ => value
         }
     }
 }

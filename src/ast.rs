@@ -63,87 +63,87 @@ pub enum Operation {
 #[derive(Debug, Clone, PartialEq)]
 pub struct Node{
     pub operation: Box<Operation>,
-    pub token: Token,
+    pub value: String,
 }
 
 impl Node {
     pub fn binary(left: Node, token: Token, right: Node) -> Self {
         Node {
             operation: Box::new(Operation::Binary(left, token.clone().value, right)),
-            token: token,
+            value: token.value,
         }
     }
     pub fn comparison(left: Node, token: Token, right: Node) -> Self {
         Node {
             operation: Box::new(Operation::Comparison(left, token.clone().value, right)),
-            token: token,
+            value: token.value,
         }
     }
     pub fn define_immutable(left: Node, right: Node) -> Self {
         Node {
             operation: Box::new(Operation::DefineImut(left.clone(), right.clone())),
-            token: Token::build(Kind::Assign, String::from("=")),
+            value: String::from("=")
         }
     }
     pub fn define_mutable(left: Node, right: Node) -> Self {
         Node {
             operation: Box::new(Operation::DefineVar(left.clone(), right.clone())),
-            token: Token::build(Kind::Assign, String::from("=")),
+            value: String::from("=")
         }
     }
     pub fn reassign(left: Node, right: Node) -> Self {
         Node {
             operation: Box::new(Operation::ReAssign(left.clone(), right.clone())),
-            token: Token::build(Kind::ReAssign, String::new()),
+            value: String::from("")
         }
     }
     pub fn indentifier(token: Token) -> Self {
         Node {
             operation: Box::new(Operation::Identifier(token.clone().value)),
-            token: token,
+            value: token.value
         }
     }
     pub fn constant(token: Token) -> Self {
         let primitive = Var::from(token.clone());
         Node {
             operation: Box::new(Operation::Constant(primitive)),
-            token: token,
+            value: token.value
         }
     }
     pub fn unary(token: Token, node: Node) -> Self {
         Node {
             operation: Box::new(Operation::NegUnary(node.clone())),
-            token: token,
+            value: token.value
         }
     }
     pub fn _return(node: Node) -> Self {
         Node {
             operation: Box::new(Operation::Return(node)),
-            token: Token::build(Kind::Return, String::new()),
+            value: String::new()
         }
     }
     pub fn ifelse(condition: Node, if_node: Node, else_node: Node) -> Self {
         Node {
             operation: Box::new(Operation::IfElse(condition, if_node, else_node)),
-            token: Token::build(Kind::Conditional, String::new()),
+            value: String::new()
         }
     }
     pub fn conditional(node:Node, statements: Node) -> Self {
         Node {
             operation: Box::new(Operation::Loop(node, statements)),
-            token: Token::build(Kind::Conditional, String::new()),
+            value: String::new()
         }
     }
     pub fn block(statements: Vec<Node>) -> Self {
         Node {
             operation: Box::new(Operation::Block(statements)),
-            token: Token::build(Kind::Statement, String::new()),
+            value: String::new()
         }
     }
     pub fn empty() -> Self {
         Node {
             operation: Box::new(Operation::Empty),
-            token: Token::build(Kind::Empty, String::new()),
+            value: String::new()
         }
     }
 }
