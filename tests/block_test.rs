@@ -72,8 +72,8 @@ mod blocks {
     }
 
     #[test]
-    #[should_panic]
-    fn it_validate_immutable() {
+    #[should_panic(expected="Value error: imutable y was reassigned.")]
+    fn it_validate_immutable_reassign() {
         let source =
         "begin
            imut y = 0;
@@ -96,7 +96,7 @@ mod blocks {
     }
 
     #[test]
-    #[should_panic]
+    #[should_panic(expected="Value error: variable x used before declared.")]
     fn it_validate_not_declared_var() {
         let source =
         "begin
@@ -108,15 +108,46 @@ mod blocks {
     }
 
     #[test]
-    #[should_panic]
-    fn it_has_block_context() {
+    #[should_panic(expected = "Variable y doesn't exists in this context")]
+    fn it_validates_block_context() {
         let source =
         "begin
-           mut x = 999;
+           mut x = 0;
            begin
              mut y = 1;
            end;
            return y
+         end";
+        let result = rascal::eval(String::from(source));
+    }
+
+    #[test]
+    #[should_panic(expected = "Variable z doesn't exists in this context")]
+    fn it_validates_nested_block_context() {
+        let source =
+        "begin
+           mut x = 0;
+           begin
+             mut y = x;
+             begin mut z = 0 end;
+             x = z
+           end;
+           return x
+         end";
+        let result = rascal::eval(String::from(source));
+    }
+
+    #[test]
+    #[should_panic(expected="Value error: variable x has already defined.")]
+    fn it_has_nested_block_context() {
+        let source =
+        "begin
+           mut x = 0;
+           begin
+             mut x = 10;
+             x = 15
+           end;
+           return x
          end";
         let result = rascal::eval(String::from(source));
     }
