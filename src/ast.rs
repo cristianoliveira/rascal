@@ -33,6 +33,34 @@ impl Var {
     }
 }
 
+pub struct FrameStack {
+    stack: Vec<Frame>
+}
+impl FrameStack {
+    pub fn new() -> Self {
+        FrameStack{ stack: vec![Frame::new()] }
+    }
+    // Frame stack operations
+    pub fn current(&mut self) -> &mut Frame {
+        let stack_size = self.stack.len();
+        &mut self.stack[stack_size-1] //mutable last frame
+    }
+
+    pub fn push(&mut self, block_scope: Frame) {
+        self.stack.push(block_scope)
+    }
+
+    pub fn pop(&mut self) -> Frame {
+        let old = self.stack.pop().unwrap();
+        for (k, v) in old.locals.iter() {
+            if self.current().has(k) {
+                self.current().locals.insert(k.clone(),v.clone());
+            }
+        };
+        old
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct Frame {
     pub iparents: HashMap<String, String>,
