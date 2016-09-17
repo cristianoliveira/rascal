@@ -112,7 +112,7 @@ mod blocks {
     fn it_has_block_context() {
         let source =
         "begin
-           mut x = 0;
+           mut x = 999;
            begin
              mut y = 1;
            end;

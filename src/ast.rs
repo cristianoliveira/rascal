@@ -59,6 +59,10 @@ impl Frame {
     }
 
     pub fn get(&self, id: &str) -> String {
+        // parent
+        if let Some(value) = self.iparents.get(&*id) { return value.clone() };
+        if let Some(value) = self.parents.get(&*id) { return value.clone() };
+        // current
         if let Some(value) = self.ilocals.get(&*id) { return value.clone() };
         if let Some(value) = self.locals.get(&*id) {
             return value.clone()
