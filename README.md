@@ -18,7 +18,6 @@ rascal ./example.rl
 > “If you don’t know how compilers work, then you don’t know how computers work.
 > If you’re not 100% sure whether you know how compilers work,
 > then you don’t know how they work.” — Steve Yegge
-We can say the same about interpreted languages and interpreters.
 
 # Structure
 This language is based on Pascal/Ruby and follow its structure.
@@ -85,6 +84,20 @@ begin
 end
 ```
 Result: true
+
+### Scope per block
+```ruby
+begin
+  mut y = 0;
+
+  begin
+    mut x = y + 1
+  end;
+
+  x == 4
+end
+```
+Error: Variable x doesn't exists in this context
 
 ## Future implementations
   * Strings: support for strings
