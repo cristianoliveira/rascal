@@ -21,6 +21,8 @@ pub enum Kind {
     Statement,
     StatementEnd,
     FunctionDefine,
+    FunctionParamBegin,
+    FunctionParamEnd,
     ImmutableDefine,
     MutableDefine,
     ReAssign,
@@ -65,11 +67,13 @@ impl Kind {
     pub fn reserved(word: &String) -> Option<Kind> {
         match word.as_ref() {
             // Blocks Statements
-            "fn" => Some(Kind::FunctionDefine),
+            "fun" => Some(Kind::FunctionDefine),
+            "[" => Some(Kind::FunctionParamBegin),
+            "]" => Some(Kind::FunctionParamEnd),
             "imut" => Some(Kind::ImmutableDefine),
             "mut" => Some(Kind::MutableDefine),
             "=" => Some(Kind::Assign),
-            "begin" => Some(Kind::Begin),
+            "begin"|"->" => Some(Kind::Begin),
             "end" => Some(Kind::End),
             "return" => Some(Kind::Return),
 

@@ -1,6 +1,7 @@
 // This module contains the Abstract Sintax Tree representations
 
 use token::{Token, Kind};
+use std::collections::HashMap;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Var {
@@ -34,8 +35,37 @@ impl Var {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Frame {
-    locals: Vec<Var>,
-    global: Vec<Var>
+    pub iparents: HashMap<String, String>,
+    pub parents: HashMap<String, String>,
+    pub ilocals: HashMap<String, String>,
+    pub locals: HashMap<String, String>,
+}
+impl Frame {
+    pub fn new() -> Self {
+        Frame {
+            locals: HashMap::new(),
+            parents: HashMap::new(),
+            ilocals: HashMap::new(),
+            iparents: HashMap::new()
+        }
+    }
+
+    pub fn has(&self, id: &str) -> bool {
+        self.ilocals.contains_key(id) || self.locals.contains_key(id)
+    }
+
+    pub fn is_imutable(&self, id: &str) -> bool {
+        self.ilocals.contains_key(id)
+    }
+
+    pub fn get(&self, id: &str) -> String {
+        if let Some(value) = self.ilocals.get(&*id) { return value.clone() };
+        if let Some(value) = self.locals.get(&*id) {
+            return value.clone()
+        } else {
+            panic!("Variable {} doesn't exists in this context", id)
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -62,6 +92,7 @@ pub enum Operation {
 // each node must have an token and optional nodes
 #[derive(Debug, Clone, PartialEq)]
 pub struct Node{
+    pub frame: Frame,
     pub operation: Box<Operation>,
     pub value: String,
 }
@@ -69,36 +100,42 @@ pub struct Node{
 impl Node {
     pub fn binary(left: Node, token: Token, right: Node) -> Self {
         Node {
+            frame: Frame::new(),
             operation: Box::new(Operation::Binary(left, token.clone().value, right)),
             value: token.value,
         }
     }
     pub fn comparison(left: Node, token: Token, right: Node) -> Self {
         Node {
+            frame: Frame::new(),
             operation: Box::new(Operation::Comparison(left, token.clone().value, right)),
             value: token.value,
         }
     }
     pub fn define_immutable(left: Node, right: Node) -> Self {
         Node {
+            frame: Frame::new(),
             operation: Box::new(Operation::DefineImut(left.clone(), right.clone())),
             value: String::from("=")
         }
     }
     pub fn define_mutable(left: Node, right: Node) -> Self {
         Node {
+            frame: Frame::new(),
             operation: Box::new(Operation::DefineVar(left.clone(), right.clone())),
             value: String::from("=")
         }
     }
     pub fn reassign(left: Node, right: Node) -> Self {
         Node {
+            frame: Frame::new(),
             operation: Box::new(Operation::ReAssign(left.clone(), right.clone())),
             value: String::from("")
         }
     }
     pub fn indentifier(token: Token) -> Self {
         Node {
+            frame: Frame::new(),
             operation: Box::new(Operation::Identifier(token.clone().value)),
             value: token.value
         }
@@ -106,42 +143,49 @@ impl Node {
     pub fn constant(token: Token) -> Self {
         let primitive = Var::from(token.clone());
         Node {
+            frame: Frame::new(),
             operation: Box::new(Operation::Constant(primitive)),
             value: token.value
         }
     }
     pub fn unary(token: Token, node: Node) -> Self {
         Node {
+            frame: Frame::new(),
             operation: Box::new(Operation::NegUnary(node.clone())),
             value: token.value
         }
     }
     pub fn _return(node: Node) -> Self {
         Node {
+            frame: Frame::new(),
             operation: Box::new(Operation::Return(node)),
             value: String::new()
         }
     }
     pub fn ifelse(condition: Node, if_node: Node, else_node: Node) -> Self {
         Node {
+            frame: Frame::new(),
             operation: Box::new(Operation::IfElse(condition, if_node, else_node)),
             value: String::new()
         }
     }
     pub fn conditional(node:Node, statements: Node) -> Self {
         Node {
+            frame: Frame::new(),
             operation: Box::new(Operation::Loop(node, statements)),
             value: String::new()
         }
     }
     pub fn block(statements: Vec<Node>) -> Self {
         Node {
+            frame: Frame::new(),
             operation: Box::new(Operation::Block(statements)),
             value: String::new()
         }
     }
     pub fn empty() -> Self {
         Node {
+            frame: Frame::new(),
             operation: Box::new(Operation::Empty),
             value: String::new()
         }

@@ -106,4 +106,18 @@ mod blocks {
          end";
         let result = rascal::eval(String::from(source));
     }
+
+    #[test]
+    #[should_panic]
+    fn it_has_block_context() {
+        let source =
+        "begin
+           mut x = 0;
+           begin
+             mut y = 1;
+           end;
+           return y
+         end";
+        let result = rascal::eval(String::from(source));
+    }
 }
