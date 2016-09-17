@@ -1,10 +1,6 @@
 extern crate rustc_serialize;
 extern crate docopt;
-
-mod token;
-mod interpreter;
-mod ast;
-mod parser;
+extern crate rascal;
 
 use std::io::{self};
 use std::io::prelude::*;
@@ -43,7 +39,7 @@ pub struct Args {
 // accepts a file to interpret
 fn main() {
     let args: Args = Docopt::new(USAGE)
-        .and_then(|dopt| dopt.decode()) .unwrap_or_else(|e| e.exit());
+        .and_then(|dopt| dopt.decode()).unwrap_or_else(|e| e.exit());
 
     match args {
         Args { flag_v: true, ..} => println!("{}", VERSION),
@@ -51,7 +47,7 @@ fn main() {
             let stdin = io::stdin();
             while let Some(line) = stdin.lock().lines().next() {
                 if let Ok(source_code) = line {
-                    println!(">> {}", eval(source_code));
+                    println!(">> {}", rascal::eval(source_code));
                 }
             }
         },
@@ -60,14 +56,7 @@ fn main() {
             let mut f = File::open(&arg_source[0]).unwrap();
             let mut source_code = String::new();
             let _ = f.read_to_string(&mut source_code);
-            println!(">> {}", eval(source_code));
+            println!(">> {}", rascal::eval(source_code));
         }
     }
-}
-
-pub fn eval(source: String) -> String {
-    let tokenizer = token::Tokenizer::new(source);
-    let mut parser = parser::Parser::new(tokenizer);
-    let mut interpreter = interpreter::Interpreter::new();
-    interpreter.eval(parser.parse())
 }
