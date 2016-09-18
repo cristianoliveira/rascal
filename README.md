@@ -1,6 +1,16 @@
 # Rascal
 A functional interpreted language made by Rust
 
+## Features of functional languages
+According with [Haskel wiki](https://wiki.haskell.org/Functional_programming) the features of a functional language are:
+
+ - [ ] Higher-order functions
+ - [ ] Purity
+ - [x] Immutable data
+ - [ ] Referential transparency
+ - [ ] Lazy evaluation
+ - [ ] Recursion
+
 # Use
 ```bash
 rascal ./example.rl
