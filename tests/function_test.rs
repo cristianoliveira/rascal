@@ -6,7 +6,7 @@ mod functions {
     fn it_eval_function_without_params() {
         let source =
         "begin
-           fun add = [] { return 2 + 2 };
+           fn add = [] { return 2 + 2 };
            add()
          end";
 
@@ -18,7 +18,7 @@ mod functions {
     fn it_eval_function_with_params() {
         let source =
         "begin
-           fun add = [x] { return x + 2 };
+           fn add = [x] { return x + 2 };
            add(2)
          end";
 
@@ -30,7 +30,7 @@ mod functions {
     fn it_eval_function_with_multiple_params() {
         let source =
         "begin
-           fun add = [x,y,z] { return x + y + z + 1 };
+           fn add = [x,y,z] { return x + y + z + 1 };
            add(2,2,2)
          end";
 
@@ -44,7 +44,7 @@ mod functions {
         "begin
            mut y = 0;
 
-           fun foo = [x] {
+           fn foo = [x] {
              if x < 10 {
                 y = x + 1;
              };
@@ -63,7 +63,7 @@ mod functions {
     fn it_eval_recursive_functions() {
         let source =
         "begin
-           fun foo = [x] {
+           fn foo = [x] {
              if x < 10 {
                 x = x + 1;
                 foo(x)
@@ -83,7 +83,7 @@ mod functions {
     fn it_eval_expressions_as_args() {
         let source =
         "begin
-           fun foo = [x, y] {
+           fn foo = [x, y] {
              return x + y
            };
 
@@ -98,7 +98,7 @@ mod functions {
     fn it_eval_high_order_functions() {
         let source =
         "begin
-           fun foo = [x] {
+           fn foo = [x] {
              return x + 1
            };
            imut other = foo;
@@ -113,10 +113,10 @@ mod functions {
     fn it_accepts_function_as_params() {
         let source =
         "begin
-           fun composed = [f] {
+           fn composed = [f] {
              f(10)
            };
-           fun foo = [x] {
+           fn foo = [x] {
              return x + 1
            };
            composed(foo)

@@ -401,7 +401,7 @@ mod test {
 
     #[test]
     fn it_eval_functions_without_params() {
-        let text = "{ fun two = [] { return 2 }; two() }";
+        let text = "{ fn two = [] { return 2 }; two() }";
         let tokenizer = Tokenizer::new(String::from(text));
         let mut parser = Parser::new(tokenizer);
         let mut interpreter = Interpreter::new();
@@ -412,7 +412,7 @@ mod test {
 
     #[test]
     fn it_eval_functions_with_params() {
-        let text = "{ fun add = [x] { return x + 2 }; add(2) }";
+        let text = "{ fn add = [x] { return x + 2 }; add(2) }";
         let tokenizer = Tokenizer::new(String::from(text));
         let mut parser = Parser::new(tokenizer);
         let mut interpreter = Interpreter::new();
@@ -423,7 +423,7 @@ mod test {
 
     #[test]
     fn it_eval_functions_with_multiple_params() {
-        let text = "{ fun add = [x,y,z] { return x + y + z }; add(2,1,2) }";
+        let text = "{ fn add = [x,y,z] { return x + y + z }; add(2,1,2) }";
         let tokenizer = Tokenizer::new(String::from(text));
         let mut parser = Parser::new(tokenizer);
         let mut interpreter = Interpreter::new();

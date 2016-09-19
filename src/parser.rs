@@ -617,7 +617,7 @@ fn it_parses_expressions_gt_lt() {
 
 #[test]
 fn it_parses_function_define() {
-    let text = "{ fun x = [arg, arg2] { return arg + arg2 } }";
+    let text = "{ fn x = [arg, arg2] { return arg + arg2 } }";
     let tokenizer = Tokenizer::new(String::from(text));
     let mut parser = Parser::new(tokenizer);
 

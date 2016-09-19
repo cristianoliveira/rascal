@@ -67,7 +67,7 @@ impl Kind {
     pub fn reserved(word: &String) -> Option<Kind> {
         match word.as_ref() {
             // Blocks Statements
-            "fun" => Some(Kind::FunctionDefine),
+            "fn" => Some(Kind::FunctionDefine),
             "imut" => Some(Kind::ImmutableDefine),
             "mut" => Some(Kind::MutableDefine),
             "=" => Some(Kind::Assign),
@@ -415,11 +415,11 @@ fn it_acepts_if_else_statements() {
 
 #[test]
 fn it_acepts_function_definitions() {
-    let text = "fun f = [ x, y ] { x * 2 }";
+    let text = "fn f = [ x, y ] { x * 2 }";
     let mut tokens = Tokenizer::new(String::from(text));
     assert_eq!(
         tokens.next(),
-        Some(Token { kind: Kind::FunctionDefine, value: String::from("fun") })
+        Some(Token { kind: Kind::FunctionDefine, value: String::from("fn") })
     );
     assert_eq!(
         tokens.next(),
