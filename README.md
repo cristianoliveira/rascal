@@ -5,7 +5,7 @@ A functional interpreted language made by Rust
 According with [Haskel wiki](https://wiki.haskell.org/Functional_programming) the features of a functional language are:
 
  - [x] Functions
- - [ ] Higher-order functions
+ - [x] Higher-order functions
  - [ ] Purity
  - [x] Immutable data
  - [ ] Referential transparency
@@ -119,6 +119,21 @@ end
 ```
 Result: 11
 
+### High Order Functions
+```ruby
+begin
+  fun composed = [f] {
+    f(10)
+  };
+  fun foo = [x] {
+    return x + 1
+  };
+  
+  composed(foo)
+end
+```
+Result: 11
+
 ## Future implementations
   * Strings: support for strings
   * String comparison: support for compare strings
@@ -126,6 +141,7 @@ Result: 11
   * Return: return in the middle of a block
   * Stable REPL: run code without exiting for sintax errors
   * Comments: ignore after `#`
+  * Lambda: support for short `x = |y| y + 1;`
 
 ## The Architecture
 It is a simple interpreded language that walks on an AST executing the program.
