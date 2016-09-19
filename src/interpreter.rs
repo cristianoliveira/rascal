@@ -75,7 +75,7 @@ impl Interpreter {
                 self.stack.push(func_frame);
 
                 let name = nodename.value;
-                println!("calling {}", name);
+                // println!("calling {}", name);
                 if let Type::Func(fparams, block) = self.scope().get(&*name).clone() {
                     for (pname, pvalue) in fparams.iter().zip(params.iter()) {
                         let value = self.eval_tree(pvalue.clone());
@@ -318,6 +318,15 @@ mod test {
         let mut parser = Parser::new(tokenizer);
 
         assert_eq!("2", Interpreter::new().eval(parser.parse()));
+    }
+
+    #[test]
+    fn it_mod() {
+        let text = "4%2";
+        let tokenizer = Tokenizer::new(String::from(text));
+        let mut parser = Parser::new(tokenizer);
+
+        assert_eq!("0", Interpreter::new().eval(parser.parse()));
     }
 
     #[test]

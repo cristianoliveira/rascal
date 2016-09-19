@@ -403,7 +403,7 @@ impl Parser {
 
         if let Some(token) = self.tokenizer.advance().get() {
             match token.value.as_ref() {
-                "*" | "/" => {
+                "*" | "/" | "%" => {
                     return ast::Node::binary(
                         result.clone(),
                         self.tokenizer.consume(Kind::Operator).value,
