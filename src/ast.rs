@@ -2,36 +2,7 @@
 
 use token::{Token, Kind};
 use std::collections::HashMap;
-
-#[derive(Debug, Clone, PartialEq)]
-pub enum Type {
-    Str(String),
-    Int(i32),
-    Bool(bool),
-    Func(Vec<Type>, Node),
-    Nil
-}
-impl Type {
-    pub fn from(token: Token) -> Type {
-        match token {
-            Token{kind: Kind::Integer, value} => {
-                Type::Int(value.parse::<i32>().expect("Invalid integer value."))
-            },
-            Token{kind: Kind::Bolean, value} =>
-                Type::Bool(value=="true"),
-            _ => Type::Nil
-        }
-    }
-    pub fn to_string(self) -> String {
-        match self {
-            Type::Func(_,_) => format!("function"),
-            Type::Str(s) => format!("{}", s),
-            Type::Int(s) => format!("{}", s),
-            Type::Bool(s) => format!("{}", s),
-            _ => String::new()
-        }
-    }
-}
+use primitive::Type;
 
 pub struct FrameStack {
     stack: Vec<Frame>
@@ -63,7 +34,7 @@ impl FrameStack {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Frame {
-    pub functions: HashMap<String, (Vec<Node>, Node)>,
+    pub functions: HashMap<String, Type>,
     pub params: Vec<Node>,
     pub iparents: HashMap<String, Type>,
     pub parents: HashMap<String, Type>,
@@ -111,7 +82,7 @@ pub enum Operation {
     Binary(Node, String, Node),
     Comparison(Node, String, Node),
     CallFunc(Node, Vec<Node>),
-    DefineFunc(Node, Vec<Node>, Node),
+    DefineFunc(Node, Type),
     DefineImut(Node, Node),
     DefineVar(Node, Node),
     ReAssign(Node, Node),
@@ -161,11 +132,7 @@ impl Node {
     pub fn define_function(id: Node, params: Vec<Node>, block: Node) -> Self {
         Node {
             operation: Box::new(
-                Operation::DefineFunc(
-                    id.clone(),
-                    params.clone(),
-                    block.clone()
-                    )
+                Operation::DefineFunc(id.clone(), Type::Func(params, block))
                 ),
             value: String::from("=")
         }

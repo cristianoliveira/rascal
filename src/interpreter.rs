@@ -1,7 +1,8 @@
 use token::{Token, Kind, Tokenizer};
-use ast::{Node, Operation, Type, FrameStack, Frame};
+use ast::{Node, Operation, FrameStack, Frame};
 use parser::Parser;
 use std::collections::HashMap;
+use primitive::Type;
 
 // # Interpreter
 //
@@ -76,25 +77,25 @@ impl Interpreter {
                 self.stack.push(func_frame);
 
                 let name = nodename.value;
-                let (fparams, function_block) = self.scope().functions.get(&*name).unwrap().clone();
+                if let Type::Func(fparams, block) = self.scope().functions.get(&*name).unwrap().clone() {
+                    for (pname, pvalue) in fparams.iter().zip(params.iter()) {
+                        let value = self.eval_tree(pvalue.clone());
+                        self.scope().locals.insert(pname.clone().value, value);
+                    }
 
-                for (pname, pvalue) in fparams.iter().zip(params.iter()) {
-                    let value = self.eval_tree(pvalue.clone());
-                    self.scope().locals.insert(pname.clone().value, value);
+                    self.eval_tree(block)
+                } else {
+                    panic!("Value error: {} is not callable", name)
                 }
-
-                self.eval_tree(function_block)
             },
 
-            Operation::DefineFunc(lnode, params, rnode) => {
+            Operation::DefineFunc(lnode, func) => {
                 let name = lnode.value;
-                let block = rnode.clone();
-
                 if self.scope().has(&*name) {
                     panic!("Value error: variable {} has already defined.", name)
                 }
 
-                self.scope().functions.insert(name, (params, block));
+                self.scope().functions.insert(name, func);
                 Type::Nil
             },
 
