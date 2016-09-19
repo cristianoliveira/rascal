@@ -146,10 +146,12 @@ impl Tokenizer {
         self.current.clone()
     }
 
-    pub fn peek(&self, next: usize) -> Option<Token> {
-        let value = self.text.chars().nth(self.position + next);
-        println!("peeked {:?}", value);
-        Some(Token::build(Kind::classify(&value), format!("{}", value.unwrap())))
+    pub fn peek(&mut self, next: usize) -> Option<Token> {
+        let curr_position = self.position.clone();
+        let next = self.next();
+        self.position = curr_position;
+        println!("peeked {:?}", next);
+        next
     }
 
     // consume

@@ -6,7 +6,7 @@ mod functions {
     fn it_eval_function_without_params() {
         let source =
         "begin
-           fn add = [] { return 2 + 2 };
+           fn add = [] { 2 + 2 };
            add()
          end";
 
@@ -18,7 +18,7 @@ mod functions {
     fn it_eval_function_with_params() {
         let source =
         "begin
-           fn add = [x] { return x + 2 };
+           fn add = [x] { x + 2 };
            add(2)
          end";
 
@@ -30,7 +30,7 @@ mod functions {
     fn it_eval_function_with_multiple_params() {
         let source =
         "begin
-           fn add = [x,y,z] { return x + y + z + 1 };
+           fn add = [x,y,z] { x + y + z + 1 };
            add(2,2,2)
          end";
 
@@ -46,10 +46,10 @@ mod functions {
 
            fn foo = [x] {
              if x < 10 {
-                y = x + 1;
+                y = x + 1
              };
 
-             return y
+             y
            };
 
            foo(6)
@@ -69,7 +69,7 @@ mod functions {
                 foo(x)
              };
 
-             return x
+             x
            };
 
            foo(6)
@@ -98,9 +98,7 @@ mod functions {
     fn it_eval_high_order_functions() {
         let source =
         "begin
-           fn foo = [x] {
-             return x + 1
-           };
+           fn foo = [x] { x + 1 };
            imut other = foo;
            other(6)
          end";
@@ -113,12 +111,8 @@ mod functions {
     fn it_accepts_function_as_params() {
         let source =
         "begin
-           fn composed = [f] {
-             f(10)
-           };
-           fn foo = [x] {
-             return x + 1
-           };
+           fn composed = [f] { f(10) };
+           fn foo = [x] { x + 1 };
            composed(foo)
          end";
 

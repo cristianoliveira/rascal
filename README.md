@@ -39,7 +39,7 @@ rascal ./example.rl
   * Comparison: `==`,`!=`, `>`, `<`, `and`, `or`
   * If else: `if 1==1 begin .. else .. end`
   * Loop: `while 1==1 begin .. end`
-  * Function: `fn foo = [x] { return x + 1 }`
+  * Function: `fn foo = [x] { x + 1 }`
 
 Each statement requires a `;` unless the last statement. Example of runnable code:
 ### Integers expressions
@@ -112,7 +112,7 @@ Error: Variable x doesn't exists in this context
 ### Functions
 ```ruby
 begin
-  fn foo = [x] { return x + 1 };
+  fn foo = [x] { x + 1 };
   
   foo(10)
 end
@@ -125,9 +125,7 @@ begin
   fn composed = [f] {
     f(10)
   };
-  fn foo = [x] {
-    return x + 1
-  };
+  fn foo = [x] { x + 1 };
   
   composed(foo)
 end

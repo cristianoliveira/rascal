@@ -139,16 +139,20 @@ impl Parser {
                 self.define_statement()
             },
             Some(Token{ kind: Kind::ID, ..}) => {
-                if let Some(Token{kind: Kind::GroupBegin, ..}) = next {
-                    self.function_call()
-                } else {
-                    self.assign_statement()
+                match next {
+                    Some(Token{kind: Kind::GroupBegin, ..}) =>
+                        self.function_call(),
+
+                    Some(Token{kind: Kind::Assign, ..}) =>
+                        self.assign_statement(),
+
+                    _ => self.expr()
                 }
             },
             Some(Token{ kind: Kind::Begin, ..}) => self.block(),
             Some(Token{ kind: Kind::While, ..}) => self._while(),
             Some(Token{ kind: Kind::If, ..}) => self._if(),
-            _ => ast::Node::empty()
+            _ => self.expr()
         }
     }
 
@@ -537,6 +541,20 @@ fn it_parses_simple_block() {
     let assign = ast::Node::define_mutable(var, expr);
 
     let comp = ast::Node::block(vec![assign]);
+    assert_eq!(comp, parser.parse());
+}
+
+#[test]
+fn it_parses_block_single_expression() {
+    let text = "{ 10 + 5 }";
+    let tokenizer = Tokenizer::new(String::from(text));
+    let mut parser = Parser::new(tokenizer);
+
+    let expr = test_node_builder(String::from("10"),
+                                 String::from("+"),
+                                 String::from("5"));
+
+    let comp = ast::Node::block(vec![expr]);
     assert_eq!(comp, parser.parse());
 }
 

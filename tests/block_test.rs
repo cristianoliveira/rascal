@@ -114,7 +114,7 @@ mod blocks {
         "begin
            mut x = 0;
            begin
-             mut y = 1;
+             mut y = 1
            end;
            return y
          end";
