@@ -8,20 +8,47 @@ use ast;
 //
 // Context free grammar for this language:
 //```
+//
+//   block: BEGIN statement_list END
+//
+//   statement_list: statement
+//   statement_list: statement STATEMENT_END statement_list
+//
+//   statement: compoud_statement
+//   statement: return_statement
+//   statement: while
+//   statement: if
+//   statement: define_statement
+//   statement: assign_statement
+//   statement: empty_statement
+//
+//   assign_statement: constant ASSIGN expr
+//
+//   while: WHILE expr BEGIN statement_list END
+//
+//   if: IF expr BEGIN statement_list END
+//   if: IF expr BEGIN statement_list ELSE statement_lit END
+//
+//   define_statement: FUN variable ASSIGN ( params_list ) block
+//   define_statement: MUT variable
+//   define_statement: MUT variable ASSIGN expr
+//   define_statement: IMUT constant ASSIGN expr
+//
 //   expr:: term
 //   expr:: term (+|-) term
 //   expr:: term (OR) term
+//   expr:: term (==|!==|>|<) term
 //
 //   term:: factor
 //   term:: factor (*|/) factor
 //   term:: factor (AND) factor
 //
 //   factor:: (-|+) factor
-//   factor:: (==|!=) factor
 //   factor:: ( expr )
 //   factor:: INTEGER
 //   factor:: BOOLEAN
 //   factor:: variable
+//   factor:: function_call
 //
 //   variable:: ID
 //```
@@ -34,6 +61,110 @@ impl Parser {
         Parser {
             tokenizer: lexer,
         }
+    }
+
+    // function_call
+    //
+    // function_call is a ID followed by ( followed by )
+    // Represented as context free grammar:
+    // ```
+    //   function_call: ID BEGIN END
+    //   function_call: ID BEGIN param_list END
+    // ```
+    fn function_call(&mut self) -> ast::Node {
+        let name = self.variable();
+        self.tokenizer.advance().consume(Kind::GroupBegin);
+        let args = self.args_list();
+        self.tokenizer.advance().consume(Kind::GroupEnd);
+        ast::Node::call_function(name, args)
+    }
+
+
+    // block
+    //
+    // block is a BEGIN followed by statement_list followed by END
+    // Represented as context free grammar:
+    // ```
+    //   block: BEGIN statement_list END
+    // ```
+    fn block(&mut self) -> ast::Node {
+        self.tokenizer.advance().consume(Kind::Begin);
+        let statement_list = self.statement_list();
+        self.tokenizer.advance().consume(Kind::End);
+        ast::Node::block(statement_list)
+    }
+
+    // statement_list
+    //
+    // statement_list can be a single statement or single statement followed by
+    // STATEMENT_END followed by statement_list recursively
+    // Represented as context free grammar:
+    // ```
+    //   statement_list: statement
+    //   statement_list: statement STATEMENT_END statement_list
+    // ```
+    fn statement_list(&mut self) -> Vec<ast::Node> {
+        let mut statements = vec![self.statement()];
+        if let Some(Token{kind: Kind::StatementEnd, ..}) = self.tokenizer.advance().get() {
+            self.tokenizer.consume(Kind::StatementEnd);
+            statements.extend(self.statement_list())
+        }
+        return statements
+    }
+
+    // statement
+    //
+    // statement can be a compoud, assign or empty statement.
+    // Represented as context free grammar:
+    // ```
+    //   statement: compoud_statement
+    //   statement: return_statement
+    //   statement: while_block
+    //   statement: if_block
+    //   statement: define_statement
+    //   statement: assign_statement
+    //   statement: empty_statement
+    // ```
+    fn statement(&mut self) -> ast::Node {
+        let curr = self.tokenizer.advance().get();
+        let next = self.tokenizer.peek(0);
+        match curr {
+            Some(Token{ kind: Kind::Return, ..}) => {
+                self.tokenizer.consume(Kind::Return);
+                ast::Node::_return(self.expr())
+            },
+            Some(Token{ kind: Kind::ImmutableDefine, ..}) |
+            Some(Token{ kind: Kind::FunctionDefine, ..}) |
+            Some(Token{ kind: Kind::MutableDefine, ..}) => {
+                self.define_statement()
+            },
+            Some(Token{ kind: Kind::ID, ..}) => {
+                if let Some(Token{kind: Kind::GroupBegin, ..}) = next {
+                    self.function_call()
+                } else {
+                    self.assign_statement()
+                }
+            },
+            Some(Token{ kind: Kind::Begin, ..}) => self.block(),
+            Some(Token{ kind: Kind::While, ..}) => self._while(),
+            Some(Token{ kind: Kind::If, ..}) => self._if(),
+            _ => ast::Node::empty()
+        }
+    }
+
+    // assign_statement
+    //
+    // assign_statement is an constant followed by an assign token followed by 
+    // an expression (expr). Represented as context free grammar:
+    // ```
+    //   assign_statement: constant ASSIGN expr
+    // ```
+    fn assign_statement(&mut self) -> ast::Node {
+        let (name, _, expr) = (self.variable(),
+            self.tokenizer.advance().consume(Kind::Assign).value,
+            self.expr()
+        );
+        ast::Node::reassign(name, expr)
     }
 
     // while
@@ -75,98 +206,34 @@ impl Parser {
         ast::Node::ifelse(condition, if_node, optional_elsenode)
     }
 
-    // block
-    //
-    // block is a BEGIN followed by statement_list followed by END
-    // Represented as context free grammar:
-    // ```
-    //   block: BEGIN statement_list END
-    // ```
-    fn block(&mut self) -> ast::Node {
-        self.tokenizer.consume(Kind::Begin);
-        let statement_list = self.statement_list();
-        self.tokenizer.consume(Kind::End);
-        ast::Node::block(statement_list)
-    }
-
-    // statement_list
-    //
-    // statement_list can be a single statement or single statement followed by
-    // STATEMENT_END followed by statement_list recursively
-    // Represented as context free grammar:
-    // ```
-    //   statement_list: statement
-    //   statement_list: statement STATEMENT_END statement_list
-    // ```
-    fn statement_list(&mut self) -> Vec<ast::Node> {
-        let mut statements = vec![self.statement()];
-        if let Some(Token{kind: Kind::StatementEnd, ..}) = self.tokenizer.advance().get() {
-            self.tokenizer.consume(Kind::StatementEnd);
-            statements.extend(self.statement_list())
-        }
-        return statements
-    }
-
-    // statement
-    //
-    // statement can be a compoud, assign or empty statement.
-    // Represented as context free grammar:
-    // ```
-    //   statement: compoud_statement
-    //   statement: return_statement
-    //   statement: while_block
-    //   statement: if_block
-    //   statement: define_statement
-    //   statement: assign_statement
-    //   statement: empty_statement
-    // ```
-    fn statement(&mut self) -> ast::Node {
-        match self.tokenizer.advance().get() {
-            Some(Token{ kind: Kind::Return, ..}) => {
-                self.tokenizer.consume(Kind::Return);
-                ast::Node::_return(self.expr())
-            },
-            Some(Token{ kind: Kind::ImmutableDefine, ..}) |
-            Some(Token{ kind: Kind::MutableDefine, ..}) => {
-                self.define_statement()
-            },
-            Some(Token{ kind: Kind::ID, ..}) => {
-                self.assign_statement()
-            },
-            Some(Token{ kind: Kind::Begin, ..}) => self.block(),
-            Some(Token{ kind: Kind::While, ..}) => self._while(),
-            Some(Token{ kind: Kind::If, ..}) => self._if(),
-            _ => ast::Node::empty()
-        }
-    }
-
-    // assign_statement
-    //
-    // assign_statement is an constant followed by an assign token followed by 
-    // an expression (expr). Represented as context free grammar:
-    // ```
-    //   assign_statement: constant ASSIGN expr
-    // ```
-    fn assign_statement(&mut self) -> ast::Node {
-        let (name, _, expr) = (self.variable(),
-            self.tokenizer.advance().consume(Kind::Assign).value,
-            self.expr()
-        );
-        ast::Node::reassign(name, expr)
-    }
-
     // define_statement
     //
     // define_statement is an LET or MUT followed by variable followed by
     // an assign token followed by an expression (expr).
     // Represented as context free grammar:
     // ```
+    //   define_statement: FUN variable ASSIGN ( params_list ) block
     //   define_statement: MUT variable
     //   define_statement: MUT variable ASSIGN expr
     //   define_statement: IMUT constant ASSIGN expr
     // ```
     fn define_statement(&mut self) -> ast::Node {
         match self.tokenizer.get() {
+            Some(Token{ kind: Kind::FunctionDefine, ..}) => {
+                self.tokenizer.consume(Kind::FunctionDefine);
+                self.tokenizer.advance();
+
+                let var = self.variable();
+                self.tokenizer.advance().consume(Kind::Assign);
+
+                self.tokenizer.advance().consume(Kind::FunctionParamBegin);
+                let params = self.params_list();
+                self.tokenizer.advance().consume(Kind::FunctionParamEnd);
+
+                let block = self.block();
+
+                ast::Node::define_function(var, params, block)
+            },
             Some(Token{ kind: Kind:: MutableDefine , ..}) => {
                 self.tokenizer.consume(Kind::MutableDefine);
                 self.tokenizer.advance();
@@ -212,8 +279,51 @@ impl Parser {
     //   variable: ID
     // ```
     fn variable(&mut self) -> ast::Node {
-        let token = self.tokenizer.consume(Kind::ID);
+        let token = self.tokenizer.advance().consume(Kind::ID);
         ast::Node::indentifier(token)
+    }
+
+    // args_list 
+    // args_list is an ID that can be followed by SEPARATOR followed by ID
+    // Represented as context free grammar:
+    // ```
+    //   args_list: expr
+    //   args_list: expr SEPARATOR expr]
+    // ```
+    fn args_list(&mut self) -> Vec<ast::Node> {
+        let mut args = vec![];
+        match self.tokenizer.advance().get() {
+            Some(Token{kind: Kind::GroupEnd, ..}) => {
+                return args
+            },
+            Some(Token{kind: Kind::Separator, ..}) => {
+                self.tokenizer.consume(Kind::Separator);
+            },
+            _ => {
+                args.push(self.factor())
+            }
+        }
+        args.extend(self.args_list());
+        args
+    }
+
+    // params_list 
+    // params_list is an ID that can be followed by SEPARATOR followed by ID
+    // Represented as context free grammar:
+    // ```
+    //   params_list: [ID] 
+    //   params_list: [ID SEPARATOR params_list]
+    // ```
+    fn params_list(&mut self) -> Vec<ast::Node> {
+        let mut params = vec![];
+        if let Some(Token{kind: Kind::ID, ..}) = self.tokenizer.advance().get() {
+            params.push(self.variable());
+            while let Some(Token{kind: Kind::Separator, ..}) = self.tokenizer.advance().get() {
+                self.tokenizer.consume(Kind::Separator);
+                params.push(self.variable())
+            }
+        }
+        params
     }
 
     // factor
@@ -222,12 +332,12 @@ impl Parser {
     // unary result of a factor or a var. Represented as context free grammar:
     // ```
     //  factor:: (-|+) factor
-    //  factor:: (==|!=|>|<) factor
     //  factor:: INTEGER
     //  factor:: BOLEAN
     //  factor:: ( expr )
     //  factor:: variable
     //  factor:: constant
+    //  factor:: function_call
     // ```
     fn factor(&mut self) -> ast::Node {
         match self.tokenizer.advance().get() {
@@ -251,7 +361,11 @@ impl Parser {
             },
 
             Some(Token{ kind: Kind::ID, .. }) => {
-                self.variable()
+                if let Some(Token{kind: Kind::GroupBegin, ..}) = self.tokenizer.peek(1) {
+                    self.function_call()
+                } else {
+                    self.variable()
+                }
             },
 
             Some(Token{ kind: Kind::CONST, .. }) => {
@@ -273,7 +387,7 @@ impl Parser {
     // ```
     // term:: factor
     // term:: factor (*|/) factor
-    // term:: factor (!== | ==) factor
+    // term:: factor (!== | == | > | <) factor
     // ```
     fn term(&mut self) -> ast::Node {
         let result = self.factor();
@@ -499,4 +613,28 @@ fn it_parses_expressions_gt_lt() {
     assert_eq!(expected, parser.parse());
 }
 
+
+#[test]
+fn it_parses_function_define() {
+    let text = "{ fun x = [arg, arg2] { return arg + arg2 } }";
+    let tokenizer = Tokenizer::new(String::from(text));
+    let mut parser = Parser::new(tokenizer);
+
+    let fun = ast::Node::indentifier(Token{ kind: Kind::ID, value: String::from("x")});
+    let arg = ast::Node::indentifier(Token{ kind: Kind::ID, value: String::from("arg")});
+    let arg2 = ast::Node::indentifier(Token{ kind: Kind::ID, value: String::from("arg2")});
+    let params = vec![arg, arg2];
+
+    let arg1 = ast::Node::indentifier(Token{ kind: Kind::ID, value: String::from("arg")});
+    let plus = Token::build(Kind::Operator, String::from("+"));
+    let arg2 = ast::Node::indentifier(Token{ kind: Kind::ID, value: String::from("arg2")});
+    let expr = ast::Node::binary(arg1, plus, arg2);
+    let nreturn = ast::Node::_return(expr);
+
+    let block = ast::Node::block(vec![nreturn]);
+
+    let fundefine = ast::Node::define_function(fun, params, block);
+    let program = ast::Node::block(vec![fundefine]);
+    assert_eq!(program, parser.parse());
+}
 

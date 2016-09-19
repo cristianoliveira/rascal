@@ -49,7 +49,7 @@ impl Interpreter {
     }
 
     pub fn eval_tree(&mut self, tree: Node) -> String {
-        let Node{ mut frame, operation, value} = tree;
+        let Node{operation, value} = tree;
         match *operation.clone() {
             Operation::IfElse(conditional, lnode, rnode) => {
                 let condition = self.eval_tree(conditional);
@@ -70,6 +70,33 @@ impl Interpreter {
             Operation::Comparison(lnode, operator, rnode) =>
                 binary_comparison(
                     self.eval_tree(lnode), operator, self.eval_tree(rnode)),
+
+            Operation::CallFunc(nodename, params) => {
+                let func_frame = self.scope().clone();
+                self.stack.push(func_frame);
+
+                let name = nodename.value;
+                let (fparams, function_block) = self.scope().functions.get(&*name).unwrap().clone();
+
+                for (pname, pvalue) in fparams.iter().zip(params.iter()) {
+                    let value = self.eval_tree(pvalue.clone());
+                    self.scope().locals.insert(pname.clone().value, value);
+                }
+
+                self.eval_tree(function_block)
+            },
+
+            Operation::DefineFunc(lnode, params, rnode) => {
+                let name = lnode.value;
+                let block = rnode.clone();
+
+                if self.scope().has(&*name) {
+                    panic!("Value error: variable {} has already defined.", name)
+                }
+
+                self.scope().functions.insert(name, (params, block));
+                value
+            },
 
             Operation::DefineImut(lnode, rnode) => {
                 let name = lnode.value;
@@ -374,5 +401,38 @@ fn it_eval_block_retrieve_vars_from_symbol_table() {
     let result = interpreter.eval(parser.parse());
 
     assert_eq!("15", result);
+}
+
+#[test]
+fn it_eval_functions_without_params() {
+    let text = "{ fun two = [] { return 2 }; two() }";
+    let tokenizer = Tokenizer::new(String::from(text));
+    let mut parser = Parser::new(tokenizer);
+    let mut interpreter = Interpreter::new();
+    let result = interpreter.eval(parser.parse());
+
+    assert_eq!("2", result);
+}
+
+#[test]
+fn it_eval_functions_with_params() {
+    let text = "{ fun add = [x] { return x + 2 }; add(2) }";
+    let tokenizer = Tokenizer::new(String::from(text));
+    let mut parser = Parser::new(tokenizer);
+    let mut interpreter = Interpreter::new();
+    let result = interpreter.eval(parser.parse());
+
+    assert_eq!("4", result);
+}
+
+#[test]
+fn it_eval_functions_with_multiple_params() {
+    let text = "{ fun add = [x,y,z] { return x + y + z }; add(2,1,2) }";
+    let tokenizer = Tokenizer::new(String::from(text));
+    let mut parser = Parser::new(tokenizer);
+    let mut interpreter = Interpreter::new();
+    let result = interpreter.eval(parser.parse());
+
+    assert_eq!("5", result);
 }
 
