@@ -80,7 +80,7 @@ mod blocks {
            y = 1;
            return y
          end";
-        let result = rascal::eval(String::from(source));
+        rascal::eval(String::from(source));
     }
 
     #[test]
@@ -104,7 +104,7 @@ mod blocks {
            x = 1;
            return x
          end";
-        let result = rascal::eval(String::from(source));
+        rascal::eval(String::from(source));
     }
 
     #[test]
@@ -118,7 +118,7 @@ mod blocks {
            end;
            return y
          end";
-        let result = rascal::eval(String::from(source));
+        rascal::eval(String::from(source));
     }
 
     #[test]
@@ -134,7 +134,7 @@ mod blocks {
            end;
            return x
          end";
-        let result = rascal::eval(String::from(source));
+        rascal::eval(String::from(source));
     }
 
     #[test]
@@ -149,6 +149,6 @@ mod blocks {
            end;
            return x
          end";
-        let result = rascal::eval(String::from(source));
+        rascal::eval(String::from(source));
     }
 }

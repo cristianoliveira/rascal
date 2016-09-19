@@ -1,7 +1,4 @@
-use token::{Token, Kind, Tokenizer};
 use ast::{Node, Operation};
-use parser::Parser;
-use std::collections::HashMap;
 use primitive::Type;
 use frame::{Frame, FrameStack};
 
@@ -51,7 +48,7 @@ impl Interpreter {
     }
 
     pub fn eval_tree(&mut self, tree: Node) -> Type {
-        let Node{operation, value} = tree;
+        let Node{operation, ..} = tree;
         match *operation.clone() {
             Operation::IfElse(conditional, lnode, rnode) => {
                 let condition = self.eval_tree(conditional);
@@ -242,196 +239,206 @@ fn truthy(condition: Type) -> bool {
         Type::Bool(true)).to_string() == "true"
 }
 
-#[test]
-fn it_eval_tree_leaf() {
-    let token = Token::build(Kind::Integer, String::from("10"));
-    let leaf = Node::constant(token);
 
-    assert_eq!("10", Interpreter::new().eval(leaf))
+#[cfg(test)]
+mod interpreter {
+
+    use token::{Token, Kind, Tokenizer};
+    use interpreter::Interpreter;
+    use parser::Parser;
+    use ast::Node;
+
+    #[test]
+    fn it_eval_tree_leaf() {
+        let token = Token::build(Kind::Integer, String::from("10"));
+        let leaf = Node::constant(token);
+
+        assert_eq!("10", Interpreter::new().eval(leaf))
+    }
+
+    #[test]
+    fn it_eval_the_node_binary_operation() {
+        // 3+5
+        let left = Node::constant(Token::build(Kind::Integer, String::from("3")));
+        let operator = Token::build(Kind::Operator, String::from("+"));
+        let right = Node::constant(Token::build(Kind::Integer, String::from("5")));
+        let node = Node::binary(left, operator, right);
+
+        assert_eq!("8", Interpreter::new().eval(node))
+    }
+
+    #[test]
+    fn it_eval_complex_tree() {
+        // 5+5*3
+        let left = Node::constant(Token::build(Kind::Integer, String::from("3")));
+        let operator = Token::build(Kind::Operator, String::from("*"));
+        let right = Node::constant(Token::build(Kind::Integer, String::from("5")));
+        let plusnode = Node::binary(left, operator, right);
+
+        let operator = Token::build(Kind::Operator, String::from("+"));
+        let sumright = Node::constant(Token::build(Kind::Integer, String::from("5")));
+        let sumnode = Node::binary(plusnode, operator, sumright);
+
+        assert_eq!("20", Interpreter::new().eval(sumnode))
+    }
+
+    #[test]
+    fn it_eval_unary_operations() {
+        // 2 -- 2
+        let rnode = Node::constant(Token::build(Kind::Integer, String::from("2")));
+        let negative_op = Token::build(Kind::Operator, String::from("-"));
+        let unarynode = Node::unary(negative_op, rnode);
+
+        let operator = Token::build(Kind::Operator, String::from("-"));
+        let left = Node::constant(Token::build(Kind::Integer, String::from("2")));
+        let sumnode = Node::binary(left, operator, unarynode);
+
+        assert_eq!("4", Interpreter::new().eval(sumnode))
+    }
+
+    #[test]
+    fn it_sums() {
+        let text = "5+1";
+        let tokenizer = Tokenizer::new(String::from(text));
+        let mut parser = Parser::new(tokenizer);
+
+        assert_eq!("6", Interpreter::new().eval(parser.parse()));
+    }
+
+    #[test]
+    fn it_substract() {
+        let text = "5-1";
+        let tokenizer = Tokenizer::new(String::from(text));
+        let mut parser = Parser::new(tokenizer);
+
+        assert_eq!("4", Interpreter::new().eval(parser.parse()));
+    }
+
+    #[test]
+    fn it_multiplies() {
+        let text = "5*2";
+        let tokenizer = Tokenizer::new(String::from(text));
+        let mut parser = Parser::new(tokenizer);
+
+        assert_eq!("10", Interpreter::new().eval(parser.parse()));
+    }
+
+    #[test]
+    fn it_divide() {
+        let text = "4/2";
+        let tokenizer = Tokenizer::new(String::from(text));
+        let mut parser = Parser::new(tokenizer);
+
+        assert_eq!("2", Interpreter::new().eval(parser.parse()));
+    }
+
+    #[test]
+    fn it_accepts_multiples_operation() {
+        let text = "10+5-4-1";
+        let tokenizer = Tokenizer::new(String::from(text));
+        let mut parser = Parser::new(tokenizer);
+
+        assert_eq!("10", Interpreter::new().eval(parser.parse()));
+    }
+
+    #[test]
+    fn it_respect_precedence() {
+        let text = "1+1*2";
+        let tokenizer = Tokenizer::new(String::from(text));
+        let mut parser = Parser::new(tokenizer);
+
+        assert_eq!("3", Interpreter::new().eval(parser.parse()));
+    }
+
+    #[test]
+    fn it_respects_grouped_expression() {
+        let text = "4+(1+(1+1)*2)+1";
+        let tokenizer = Tokenizer::new(String::from(text));
+        let mut parser = Parser::new(tokenizer);
+
+        assert_eq!("10", Interpreter::new().eval(parser.parse()));
+    }
+
+    #[test]
+    fn it_accept_unary_operations() {
+        let text = "(4+-1)--2";
+        let tokenizer = Tokenizer::new(String::from(text));
+        let mut parser = Parser::new(tokenizer);
+
+        assert_eq!("5", Interpreter::new().eval(parser.parse()));
+    }
+
+    #[test]
+    fn it_accept_binary_comparison() {
+        let text = "4 == 2";
+        let tokenizer = Tokenizer::new(String::from(text));
+        let mut parser = Parser::new(tokenizer);
+
+        assert_eq!("false", Interpreter::new().eval(parser.parse()));
+    }
+
+    #[test]
+    fn it_accept_composed_binary_comparison() {
+        let text = "1 > 1 or 2 == 2 and 3 != 3";
+        let tokenizer = Tokenizer::new(String::from(text));
+        let mut parser = Parser::new(tokenizer);
+
+        assert_eq!("false", Interpreter::new().eval(parser.parse()));
+    }
+
+
+    #[test]
+    fn it_eval_block_assigning_vars_to_symbol_table() {
+        let text = "begin mut x = 10; return x end";
+        let tokenizer = Tokenizer::new(String::from(text));
+        let mut parser = Parser::new(tokenizer);
+        let mut interpreter = Interpreter::new();
+        let result = interpreter.eval(parser.parse());
+        assert_eq!("10", result);
+    }
+
+    #[test]
+    fn it_eval_block_retrieve_vars_from_symbol_table() {
+        let text = "begin imut x = 10; mut y = x + 5; return y end";
+        let tokenizer = Tokenizer::new(String::from(text));
+        let mut parser = Parser::new(tokenizer);
+        let mut interpreter = Interpreter::new();
+        let result = interpreter.eval(parser.parse());
+
+        assert_eq!("15", result);
+    }
+
+    #[test]
+    fn it_eval_functions_without_params() {
+        let text = "{ fun two = [] { return 2 }; two() }";
+        let tokenizer = Tokenizer::new(String::from(text));
+        let mut parser = Parser::new(tokenizer);
+        let mut interpreter = Interpreter::new();
+        let result = interpreter.eval(parser.parse());
+
+        assert_eq!("2", result);
+    }
+
+    #[test]
+    fn it_eval_functions_with_params() {
+        let text = "{ fun add = [x] { return x + 2 }; add(2) }";
+        let tokenizer = Tokenizer::new(String::from(text));
+        let mut parser = Parser::new(tokenizer);
+        let mut interpreter = Interpreter::new();
+        let result = interpreter.eval(parser.parse());
+
+        assert_eq!("4", result);
+    }
+
+    #[test]
+    fn it_eval_functions_with_multiple_params() {
+        let text = "{ fun add = [x,y,z] { return x + y + z }; add(2,1,2) }";
+        let tokenizer = Tokenizer::new(String::from(text));
+        let mut parser = Parser::new(tokenizer);
+        let mut interpreter = Interpreter::new();
+        let result = interpreter.eval(parser.parse());
+
+        assert_eq!("5", result);
+    }
+
 }
-
-#[test]
-fn it_eval_the_node_binary_operation() {
-    // 3+5
-    let left = Node::constant(Token::build(Kind::Integer, String::from("3")));
-    let operator = Token::build(Kind::Operator, String::from("+"));
-    let right = Node::constant(Token::build(Kind::Integer, String::from("5")));
-    let node = Node::binary(left, operator, right);
-
-    assert_eq!("8", Interpreter::new().eval(node))
-}
-
-#[test]
-fn it_eval_complex_tree() {
-    // 5+5*3
-    let left = Node::constant(Token::build(Kind::Integer, String::from("3")));
-    let operator = Token::build(Kind::Operator, String::from("*"));
-    let right = Node::constant(Token::build(Kind::Integer, String::from("5")));
-    let plusnode = Node::binary(left, operator, right);
-
-    let operator = Token::build(Kind::Operator, String::from("+"));
-    let sumright = Node::constant(Token::build(Kind::Integer, String::from("5")));
-    let sumnode = Node::binary(plusnode, operator, sumright);
-
-    assert_eq!("20", Interpreter::new().eval(sumnode))
-}
-
-#[test]
-fn it_eval_unary_operations() {
-    // 2 -- 2
-    let rnode = Node::constant(Token::build(Kind::Integer, String::from("2")));
-    let negative_op = Token::build(Kind::Operator, String::from("-"));
-    let unarynode = Node::unary(negative_op, rnode);
-
-    let operator = Token::build(Kind::Operator, String::from("-"));
-    let left = Node::constant(Token::build(Kind::Integer, String::from("2")));
-    let sumnode = Node::binary(left, operator, unarynode);
-
-    assert_eq!("4", Interpreter::new().eval(sumnode))
-}
-
-#[test]
-fn it_sums() {
-    let text = "5+1";
-    let tokenizer = Tokenizer::new(String::from(text));
-    let mut parser = Parser::new(tokenizer);
-
-    assert_eq!("6", Interpreter::new().eval(parser.parse()));
-}
-
-#[test]
-fn it_substract() {
-    let text = "5-1";
-    let tokenizer = Tokenizer::new(String::from(text));
-    let mut parser = Parser::new(tokenizer);
-
-    assert_eq!("4", Interpreter::new().eval(parser.parse()));
-}
-
-#[test]
-fn it_multiplies() {
-    let text = "5*2";
-    let tokenizer = Tokenizer::new(String::from(text));
-    let mut parser = Parser::new(tokenizer);
-
-    assert_eq!("10", Interpreter::new().eval(parser.parse()));
-}
-
-#[test]
-fn it_divide() {
-    let text = "4/2";
-    let tokenizer = Tokenizer::new(String::from(text));
-    let mut parser = Parser::new(tokenizer);
-
-    assert_eq!("2", Interpreter::new().eval(parser.parse()));
-}
-
-#[test]
-fn it_accepts_multiples_operation() {
-    let text = "10+5-4-1";
-    let tokenizer = Tokenizer::new(String::from(text));
-    let mut parser = Parser::new(tokenizer);
-
-    assert_eq!("10", Interpreter::new().eval(parser.parse()));
-}
-
-#[test]
-fn it_respect_precedence() {
-    let text = "1+1*2";
-    let tokenizer = Tokenizer::new(String::from(text));
-    let mut parser = Parser::new(tokenizer);
-
-    assert_eq!("3", Interpreter::new().eval(parser.parse()));
-}
-
-#[test]
-fn it_respects_grouped_expression() {
-    let text = "4+(1+(1+1)*2)+1";
-    let tokenizer = Tokenizer::new(String::from(text));
-    let mut parser = Parser::new(tokenizer);
-
-    assert_eq!("10", Interpreter::new().eval(parser.parse()));
-}
-
-#[test]
-fn it_accept_unary_operations() {
-    let text = "(4+-1)--2";
-    let tokenizer = Tokenizer::new(String::from(text));
-    let mut parser = Parser::new(tokenizer);
-
-    assert_eq!("5", Interpreter::new().eval(parser.parse()));
-}
-
-#[test]
-fn it_accept_binary_comparison() {
-    let text = "4 == 2";
-    let tokenizer = Tokenizer::new(String::from(text));
-    let mut parser = Parser::new(tokenizer);
-
-    assert_eq!("false", Interpreter::new().eval(parser.parse()));
-}
-
-#[test]
-fn it_accept_composed_binary_comparison() {
-    let text = "1 > 1 or 2 == 2 and 3 != 3";
-    let tokenizer = Tokenizer::new(String::from(text));
-    let mut parser = Parser::new(tokenizer);
-
-    assert_eq!("false", Interpreter::new().eval(parser.parse()));
-}
-
-
-#[test]
-fn it_eval_block_assigning_vars_to_symbol_table() {
-    let text = "begin mut x = 10; return x end";
-    let tokenizer = Tokenizer::new(String::from(text));
-    let mut parser = Parser::new(tokenizer);
-    let mut interpreter = Interpreter::new();
-    let result = interpreter.eval(parser.parse());
-    assert_eq!("10", result);
-}
-
-#[test]
-fn it_eval_block_retrieve_vars_from_symbol_table() {
-    let text = "begin imut x = 10; mut y = x + 5; return y end";
-    let tokenizer = Tokenizer::new(String::from(text));
-    let mut parser = Parser::new(tokenizer);
-    let mut interpreter = Interpreter::new();
-    let result = interpreter.eval(parser.parse());
-
-    assert_eq!("15", result);
-}
-
-#[test]
-fn it_eval_functions_without_params() {
-    let text = "{ fun two = [] { return 2 }; two() }";
-    let tokenizer = Tokenizer::new(String::from(text));
-    let mut parser = Parser::new(tokenizer);
-    let mut interpreter = Interpreter::new();
-    let result = interpreter.eval(parser.parse());
-
-    assert_eq!("2", result);
-}
-
-#[test]
-fn it_eval_functions_with_params() {
-    let text = "{ fun add = [x] { return x + 2 }; add(2) }";
-    let tokenizer = Tokenizer::new(String::from(text));
-    let mut parser = Parser::new(tokenizer);
-    let mut interpreter = Interpreter::new();
-    let result = interpreter.eval(parser.parse());
-
-    assert_eq!("4", result);
-}
-
-#[test]
-fn it_eval_functions_with_multiple_params() {
-    let text = "{ fun add = [x,y,z] { return x + y + z }; add(2,1,2) }";
-    let tokenizer = Tokenizer::new(String::from(text));
-    let mut parser = Parser::new(tokenizer);
-    let mut interpreter = Interpreter::new();
-    let result = interpreter.eval(parser.parse());
-
-    assert_eq!("5", result);
-}
-

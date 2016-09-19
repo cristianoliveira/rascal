@@ -1,4 +1,3 @@
-use token::{Token, Kind};
 use std::collections::HashMap;
 use primitive::Type;
 

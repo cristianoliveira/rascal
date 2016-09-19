@@ -1,7 +1,6 @@
 // This module contains the Abstract Sintax Tree representations
 
-use token::{Token, Kind};
-use std::collections::HashMap;
+use token::{Token};
 use primitive::Type;
 
 #[derive(Debug, Clone, PartialEq)]

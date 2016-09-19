@@ -449,6 +449,7 @@ impl Parser {
 }
 
 
+#[allow(dead_code)]
 fn test_node_builder(left: String, operator: String, right: String) -> ast::Node {
     let lnode = ast::Node::constant(Token::build(Kind::Integer, left));
     let token = Token::build(Kind::Operator, operator);
