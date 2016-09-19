@@ -17,21 +17,17 @@ pub enum Kind {
     // Reserved
     Begin,
     End,
-    Empty,
-    Statement,
     StatementEnd,
     FunctionDefine,
     FunctionParamBegin,
     FunctionParamEnd,
     ImmutableDefine,
     MutableDefine,
-    ReAssign,
     Assign,
     ID,
     CONST,
     StdOut,
     Return,
-    Conditional,
     While,
     If,
     Else,
@@ -105,9 +101,6 @@ pub struct Token {
 impl Token {
     pub fn build(kind: Kind, value: String) -> Token {
         Token { kind: kind, value: value }
-    }
-    pub fn empty(kind: Kind) -> Token {
-        Token { kind: kind, value: String::from("nil")}
     }
 }
 
@@ -235,26 +228,6 @@ impl Iterator for Tokenizer {
             }
         }
     }
-}
-
-// binary_operation
-// Resolve binary expression for the given left, operator and right operand
-pub fn binary_operation(left: Token, operator: &Token, right: Token) -> Token {
-    let operleft = if let Ok(val) = left.value.parse::<i32>() { val } else {
-        panic!("Sintax error: invalid operand: {:?}", left)
-    };
-    let operright = if let Ok(val) = right.value.parse::<i32>() { val } else {
-        panic!("Sintax error: invalid operand: {:?}", right)
-    };
-    let result = match operator.value.as_ref() {
-        "+" => operleft + operright,
-        "-" => operleft - operright,
-        "*" => operleft * operright,
-        "/" => operleft / operright,
-        _ => panic!("Sintax error: invalid operator {:?}", operator)
-    };
-
-    Token::build(left.kind, result.to_string())
 }
 
 #[test]
