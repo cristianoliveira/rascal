@@ -395,14 +395,16 @@ impl Parser {
         if let Some(token) = self.tokenizer.advance().get() {
             match token.value.as_ref() {
                 "*" | "/" => {
-                    return ast::Node::binary(result.clone(),
-                                          self.tokenizer.consume(Kind::Operator),
-                                          self.factor())
+                    return ast::Node::binary(
+                        result.clone(),
+                        self.tokenizer.consume(Kind::Operator).value,
+                        self.factor())
                 },
                 "==" | "!=" | ">" | "<" => {
-                    return ast::Node::comparison(result.clone(),
-                                          self.tokenizer.consume(Kind::Comparison),
-                                          self.factor())
+                    return ast::Node::comparison(
+                        result.clone(),
+                        self.tokenizer.consume(Kind::Comparison).value,
+                        self.factor())
                 },
                 _ => ()
             };
@@ -426,13 +428,14 @@ impl Parser {
             match token.value.as_ref() {
                 "+" | "-" => {
                     result = ast::Node::binary(result.clone(),
-                                            self.tokenizer.consume(Kind::Operator),
+                                            self.tokenizer.consume(Kind::Operator).value,
                                             self.term())
                 },
                 "and"|"&&"|"or" | "||" => {
-                    result = ast::Node::comparison(result.clone(),
-                                            self.tokenizer.consume(Kind::Comparison),
-                                            self.term())
+                    result = ast::Node::comparison(
+                        result.clone(),
+                        self.tokenizer.consume(Kind::Comparison).value,
+                        self.term())
                 },
                 _ => break
             };
@@ -454,7 +457,7 @@ fn test_node_builder(left: String, operator: String, right: String) -> ast::Node
     let lnode = ast::Node::constant(Token::build(Kind::Integer, left));
     let token = Token::build(Kind::Operator, operator);
     let rnode = ast::Node::constant(Token::build(Kind::Integer, right));
-    ast::Node::binary(lnode, token, rnode)
+    ast::Node::binary(lnode, token.value, rnode)
 }
 
 #[test]
@@ -482,7 +485,7 @@ fn it_parses_multiples_operation() {
     let token = Token::build(Kind::Operator, String::from("-"));
     let rnode = ast::Node::constant(Token::build(Kind::Integer, String::from("4")));
 
-    let expected = ast::Node::binary(firstsum, token, rnode);
+    let expected = ast::Node::binary(firstsum, token.value, rnode);
     assert_eq!(expected, parser.parse());
 }
 
@@ -499,7 +502,7 @@ fn it_parses_respecting_precedence() {
     let token = Token::build(Kind::Operator, String::from("+"));
     let rnode = ast::Node::constant(Token::build(Kind::Integer, String::from("10")));
 
-    let expected = ast::Node::binary(rnode, token, plusnode);
+    let expected = ast::Node::binary(rnode, token.value, plusnode);
     assert_eq!(expected, parser.parse());
 }
 
@@ -516,7 +519,7 @@ fn it_parses_respecting_parentesis_precedence() {
     let token = Token::build(Kind::Operator, String::from("*"));
     let rnode = ast::Node::constant(Token::build(Kind::Integer, String::from("4")));
 
-    let expected = ast::Node::binary(plusnode, token, rnode);
+    let expected = ast::Node::binary(plusnode, token.value, rnode);
     assert_eq!(expected, parser.parse());
 }
 
@@ -566,7 +569,7 @@ fn it_parses_bolean_comparison() {
     let lcompar = ast::Node::constant(Token::build(Kind::Bolean, String::from("true")));
     let rcompar = ast::Node::constant(Token::build(Kind::Bolean, String::from("false")));
     let tkcompar = Token::build(Kind::Comparison, String::from("=="));
-    let comparison = ast::Node::comparison(lcompar, tkcompar, rcompar);
+    let comparison = ast::Node::comparison(lcompar, tkcompar.value, rcompar);
 
     assert_eq!(comparison, parser.parse());
 }
@@ -580,12 +583,12 @@ fn it_parses_bolean_expression() {
     let lcompar = ast::Node::constant(Token::build(Kind::Bolean, String::from("true")));
     let rcompar = ast::Node::constant(Token::build(Kind::Bolean, String::from("false")));
     let tkcompar = Token::build(Kind::Comparison, String::from("=="));
-    let comparison = ast::Node::comparison(lcompar, tkcompar, rcompar);
+    let comparison = ast::Node::comparison(lcompar, tkcompar.value, rcompar);
 
     let token = Token::build(Kind::Comparison, String::from("and"));
     let rnode = ast::Node::constant(Token::build(Kind::Bolean, String::from("true")));
 
-    let expected = ast::Node::comparison(rnode, token, comparison);
+    let expected = ast::Node::comparison(rnode, token.value, comparison);
     assert_eq!(expected, parser.parse());
 }
 
@@ -598,16 +601,16 @@ fn it_parses_expressions_gt_lt() {
     let lcompar = ast::Node::constant(Token::build(Kind::Integer, String::from("1")));
     let tkcompar = Token::build(Kind::Comparison, String::from(">"));
     let rcompar = ast::Node::constant(Token::build(Kind::Integer, String::from("2")));
-    let lnode = ast::Node::comparison(lcompar, tkcompar, rcompar);
+    let lnode = ast::Node::comparison(lcompar, tkcompar.value, rcompar);
 
     let token = Token::build(Kind::Comparison, String::from("or"));
 
     let lcompar2 = ast::Node::constant(Token::build(Kind::Integer, String::from("1")));
     let tkcompa2 = Token::build(Kind::Comparison, String::from("<"));
     let rcompar2 = ast::Node::constant(Token::build(Kind::Integer, String::from("2")));
-    let rnode = ast::Node::comparison(lcompar2, tkcompa2, rcompar2);
+    let rnode = ast::Node::comparison(lcompar2, tkcompa2.value, rcompar2);
 
-    let expected = ast::Node::comparison(lnode, token, rnode);
+    let expected = ast::Node::comparison(lnode, token.value, rnode);
     assert_eq!(expected, parser.parse());
 }
 
@@ -626,7 +629,7 @@ fn it_parses_function_define() {
     let arg1 = ast::Node::indentifier(Token{ kind: Kind::ID, value: String::from("arg")});
     let plus = Token::build(Kind::Operator, String::from("+"));
     let arg2 = ast::Node::indentifier(Token{ kind: Kind::ID, value: String::from("arg2")});
-    let expr = ast::Node::binary(arg1, plus, arg2);
+    let expr = ast::Node::binary(arg1, plus.value, arg2);
     let nreturn = ast::Node::_return(expr);
 
     let block = ast::Node::block(vec![nreturn]);

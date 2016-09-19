@@ -189,59 +189,40 @@ fn unary_operation(operator: &str, operand: Type) -> Type {
 // binary_operation
 // Resolve binary expression for the given left, operator and right operand
 fn binary_operation(left: Type, operator: String, right: Type) -> Type {
-    let operleft = if let Ok(val) = left.clone().to_string().parse::<i32>() { val } else {
-        panic!("Sintax error: invalid operand: {:?}", left)
-    };
-    let operright = if let Ok(val) = right.clone().to_string().parse::<i32>() { val } else {
-        panic!("Sintax error: invalid operand: {:?}", right)
-    };
-    let result = match operator.as_ref() {
-        "+" => operleft + operright,
-        "-" => operleft - operright,
-        "*" => operleft * operright,
-        "/" => operleft / operright,
+    match (left, operator.as_ref(), right) {
+        (r, "*", l) => return r * l,
+        (r, "/", l) => return r / l,
+        (r, "+", l) => return r + l,
+        (r, "-", l) => return r - l,
+        (r, "%", l) => return r % l,
         _ => panic!("Sintax error: invalid operator {:?}", operator)
     };
-
-    Type::Int(result)
 }
 
 // binary_operation
 // Resolve binary expression for the given left, operator and right operand
 fn binary_comparison(left: Type, operator: String, right: Type) -> Type {
-    let bleft = left.clone().to_string().replace("true","1").replace("false","0");
-    let bright = right.clone().to_string().replace("true","1").replace("false","0");
-
-    let operleft = if let Ok(val) = bleft.parse::<i32>() { val } else {
-        panic!("Sintax error: invalid operand: {:?}", left)
-    };
-    let operright = if let Ok(val) = bright.parse::<i32>() { val } else {
-        panic!("Sintax error: invalid operand: {:?}", right)
-    };
-
     let result = match operator.as_ref() {
-        "==" => operleft == operright,
-        "!=" => operleft != operright,
-        "<" => operleft < operright,
-        ">" => operleft > operright,
-        "or"|"||" => operleft == 1 || operright == 1,
-        "and"|"&&" => operleft == 1 && operright == 1,
-        _ => panic!("Sintax error: invalid operator {:?}", operator)
+        "==" => left == right,
+        "!=" => left != right,
+        ">"  => left >  right,
+        "<"  => left <  right,
+        "||"|"or"  => right.as_bool() || left.as_bool(),
+        "&&"|"and"  => right.as_bool() && left.as_bool(),
+        _ =>
+            panic!("Sintax error: invalid operation {:?}{:?}{:?}",
+                   right, operator, left)
     };
-
     Type::Bool(result)
 }
 
 fn truthy(condition: Type) -> bool {
-    binary_comparison(
-        condition,
-        String::from("=="),
-        Type::Bool(true)).to_string() == "true"
+    binary_comparison(condition, String::from("=="), Type::Bool(true)).as_bool()
 }
 
 
 #[cfg(test)]
-mod interpreter {
+mod test {
 
     use token::{Token, Kind, Tokenizer};
     use interpreter::Interpreter;
@@ -262,7 +243,7 @@ mod interpreter {
         let left = Node::constant(Token::build(Kind::Integer, String::from("3")));
         let operator = Token::build(Kind::Operator, String::from("+"));
         let right = Node::constant(Token::build(Kind::Integer, String::from("5")));
-        let node = Node::binary(left, operator, right);
+        let node = Node::binary(left, operator.value, right);
 
         assert_eq!("8", Interpreter::new().eval(node))
     }
@@ -273,11 +254,11 @@ mod interpreter {
         let left = Node::constant(Token::build(Kind::Integer, String::from("3")));
         let operator = Token::build(Kind::Operator, String::from("*"));
         let right = Node::constant(Token::build(Kind::Integer, String::from("5")));
-        let plusnode = Node::binary(left, operator, right);
+        let plusnode = Node::binary(left, operator.value, right);
 
         let operator = Token::build(Kind::Operator, String::from("+"));
         let sumright = Node::constant(Token::build(Kind::Integer, String::from("5")));
-        let sumnode = Node::binary(plusnode, operator, sumright);
+        let sumnode = Node::binary(plusnode, operator.value, sumright);
 
         assert_eq!("20", Interpreter::new().eval(sumnode))
     }
@@ -291,7 +272,7 @@ mod interpreter {
 
         let operator = Token::build(Kind::Operator, String::from("-"));
         let left = Node::constant(Token::build(Kind::Integer, String::from("2")));
-        let sumnode = Node::binary(left, operator, unarynode);
+        let sumnode = Node::binary(left, operator.value, unarynode);
 
         assert_eq!("4", Interpreter::new().eval(sumnode))
     }
@@ -375,6 +356,15 @@ mod interpreter {
         let mut parser = Parser::new(tokenizer);
 
         assert_eq!("false", Interpreter::new().eval(parser.parse()));
+    }
+
+    #[test]
+    fn it_accept_lesser_than_comparison() {
+        let text = "6 < 10";
+        let tokenizer = Tokenizer::new(String::from(text));
+        let mut parser = Parser::new(tokenizer);
+
+        assert_eq!("true", Interpreter::new().eval(parser.parse()));
     }
 
     #[test]

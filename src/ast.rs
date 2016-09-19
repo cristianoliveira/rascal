@@ -34,16 +34,16 @@ pub struct Node{
 }
 
 impl Node {
-    pub fn binary(left: Node, token: Token, right: Node) -> Self {
+    pub fn binary(left: Node, token: String, right: Node) -> Self {
         Node {
-            operation: Box::new(Operation::Binary(left, token.clone().value, right)),
-            value: token.value,
+            operation: Box::new(Operation::Binary(left, token.clone(), right)),
+            value: token,
         }
     }
-    pub fn comparison(left: Node, token: Token, right: Node) -> Self {
+    pub fn comparison(left: Node, token: String, right: Node) -> Self {
         Node {
-            operation: Box::new(Operation::Comparison(left, token.clone().value, right)),
-            value: token.value,
+            operation: Box::new(Operation::Comparison(left, token.clone(), right)),
+            value: token,
         }
     }
     pub fn call_function(id: Node, params: Vec<Node>) -> Self {
