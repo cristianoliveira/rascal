@@ -151,4 +151,14 @@ mod blocks {
          end";
         rascal::eval(String::from(source));
     }
+
+    #[test]
+    fn it_can_print_expression() {
+        let source =
+        "begin
+           mut x = 0;
+           print (x)
+         end";
+        rascal::eval(String::from(source));
+    }
 }

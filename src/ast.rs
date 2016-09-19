@@ -19,6 +19,7 @@ pub enum Operation {
     Loop(Node, Node),
     Block(Vec<Node>),
     Return(Node),
+    Print(Node),
     Empty
 }
 
@@ -102,6 +103,12 @@ impl Node {
     pub fn _return(node: Node) -> Self {
         Node {
             operation: Box::new(Operation::Return(node)),
+            value: String::new()
+        }
+    }
+    pub fn print(node: Node) -> Self {
+        Node {
+            operation: Box::new(Operation::Print(node)),
             value: String::new()
         }
     }

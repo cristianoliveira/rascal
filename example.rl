@@ -1,10 +1,10 @@
 begin
-  imut x:int = 2;
-  mut y:int = 0;
+  imut x = 2;
+  mut y = 0;
 
   while y < 10 begin
     y = x + y
   end;
 
-  return z
+  print (y)
 end

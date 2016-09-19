@@ -135,7 +135,7 @@ impl Tokenizer {
     // chaining porpouses
     pub fn advance(&mut self) -> &mut Self {
         if self.current.is_none() { self.current = self.next() }
-        println!("{:?}", self.current);
+        // println!("{:?}", self.current);
         self
     }
 
@@ -150,7 +150,7 @@ impl Tokenizer {
         let curr_position = self.position.clone();
         let next = self.next();
         self.position = curr_position;
-        println!("peeked {:?}", next);
+        // println!("peeked {:?}", next);
         next
     }
 
@@ -159,8 +159,8 @@ impl Tokenizer {
     // It is responsible for consume the current Token validating the expected
     // token for the expression sintax
     pub fn consume(&mut self, expected_kind: Kind) -> Token {
-        println!("expected {:?}", expected_kind);
-        println!("consumed {:?}", self.current);
+        // println!("expected {:?}", expected_kind);
+        // println!("consumed {:?}", self.current);
         if let Some(token) = self.current.clone() {
             self.current = None;
             if token.kind != expected_kind {
@@ -476,6 +476,36 @@ fn it_acepts_function_calls() {
     assert_eq!(
         tokens.next(),
         Some(Token { kind: Kind::Separator, value: String::from(",") })
+    );
+    assert_eq!(
+        tokens.next(),
+        Some(Token { kind: Kind::ID, value: String::from("y") })
+    );
+    assert_eq!(
+        tokens.next(),
+        Some(Token { kind: Kind::GroupEnd, value: String::from(")") })
+    );
+}
+
+#[test]
+fn it_accepts_std_output() {
+    let text = "print(x+y);";
+    let mut tokens = Tokenizer::new(String::from(text));
+    assert_eq!(
+        tokens.next(),
+        Some(Token { kind: Kind::StdOut, value: String::from("print") })
+    );
+    assert_eq!(
+        tokens.next(),
+        Some(Token { kind: Kind::GroupBegin, value: String::from("(") })
+    );
+    assert_eq!(
+        tokens.next(),
+        Some(Token { kind: Kind::ID, value: String::from("x") })
+    );
+    assert_eq!(
+        tokens.next(),
+        Some(Token { kind: Kind::Operator, value: String::from("+") })
     );
     assert_eq!(
         tokens.next(),

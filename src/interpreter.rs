@@ -144,6 +144,12 @@ impl Interpreter {
 
             Operation::Return(node) => self.eval_tree(node),
 
+            Operation::Print(node) => { 
+                let result = self.eval_tree(node);
+                println!("{}", result.to_string());
+                Type::Nil
+            },
+
             Operation::Block(statements) => {
                 let copy_scope = self.scope().clone();
                 self.stack.push(copy_scope);

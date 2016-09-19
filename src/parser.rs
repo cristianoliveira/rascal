@@ -123,15 +123,19 @@ impl Parser {
     //   statement: if_block
     //   statement: define_statement
     //   statement: assign_statement
+    //   statement: std_output_statement
     //   statement: empty_statement
     // ```
     fn statement(&mut self) -> ast::Node {
         let curr = self.tokenizer.advance().get();
-        let next = self.tokenizer.peek(0);
         match curr {
             Some(Token{ kind: Kind::Return, ..}) => {
                 self.tokenizer.consume(Kind::Return);
                 ast::Node::_return(self.expr())
+            },
+            Some(Token{ kind: Kind::StdOut, ..}) => {
+                self.tokenizer.consume(Kind::StdOut);
+                ast::Node::print(self.expr())
             },
             Some(Token{ kind: Kind::ImmutableDefine, ..}) |
             Some(Token{ kind: Kind::FunctionDefine, ..}) |
@@ -139,6 +143,7 @@ impl Parser {
                 self.define_statement()
             },
             Some(Token{ kind: Kind::ID, ..}) => {
+                let next = self.tokenizer.peek(0);
                 match next {
                     Some(Token{kind: Kind::GroupBegin, ..}) =>
                         self.function_call(),
