@@ -4,30 +4,30 @@ use token::{Token, Kind};
 use std::collections::HashMap;
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum Var {
-    RString(String),
-    RInteger(i32),
-    RBoolean(bool),
-    RFunction(Vec<Var>, Node),
+pub enum Type {
+    Str(String),
+    Int(i32),
+    Bool(bool),
+    Func(Vec<Type>, Node),
     Nil
 }
-impl Var {
-    pub fn from(token: Token) -> Var {
+impl Type {
+    pub fn from(token: Token) -> Type {
         match token {
             Token{kind: Kind::Integer, value} => {
-                Var::RInteger(value.parse::<i32>().expect("Invalid integer value."))
+                Type::Int(value.parse::<i32>().expect("Invalid integer value."))
             },
             Token{kind: Kind::Bolean, value} =>
-                Var::RBoolean(value=="true"),
-            _ => Var::Nil
+                Type::Bool(value=="true"),
+            _ => Type::Nil
         }
     }
     pub fn to_string(self) -> String {
         match self {
-            Var::RFunction(_,_) => format!("function"),
-            Var::RString(s) => format!("{}", s),
-            Var::RInteger(s) => format!("{}", s),
-            Var::RBoolean(s) => format!("{}", s),
+            Type::Func(_,_) => format!("function"),
+            Type::Str(s) => format!("{}", s),
+            Type::Int(s) => format!("{}", s),
+            Type::Bool(s) => format!("{}", s),
             _ => String::new()
         }
     }
@@ -65,10 +65,10 @@ impl FrameStack {
 pub struct Frame {
     pub functions: HashMap<String, (Vec<Node>, Node)>,
     pub params: Vec<Node>,
-    pub iparents: HashMap<String, String>,
-    pub parents: HashMap<String, String>,
-    pub ilocals: HashMap<String, String>,
-    pub locals: HashMap<String, String>,
+    pub iparents: HashMap<String, Type>,
+    pub parents: HashMap<String, Type>,
+    pub ilocals: HashMap<String, Type>,
+    pub locals: HashMap<String, Type>,
 }
 impl Frame {
     pub fn new() -> Self {
@@ -90,7 +90,7 @@ impl Frame {
         self.ilocals.contains_key(id)
     }
 
-    pub fn get(&self, id: &str) -> String {
+    pub fn get(&self, id: &str) -> Type {
         // parenfunctionst
         if let Some(value) = self.iparents.get(&*id) { return value.clone() };
         if let Some(value) = self.parents.get(&*id) { return value.clone() };
@@ -107,7 +107,7 @@ impl Frame {
 #[derive(Debug, Clone, PartialEq)]
 pub enum Operation {
     Identifier(String),
-    Constant(Var),
+    Constant(Type),
     Binary(Node, String, Node),
     Comparison(Node, String, Node),
     CallFunc(Node, Vec<Node>),
@@ -195,7 +195,7 @@ impl Node {
         }
     }
     pub fn constant(token: Token) -> Self {
-        let primitive = Var::from(token.clone());
+        let primitive = Type::from(token.clone());
         Node {
             operation: Box::new(Operation::Constant(primitive)),
             value: token.value

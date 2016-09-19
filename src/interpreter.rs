@@ -1,5 +1,5 @@
 use token::{Token, Kind, Tokenizer};
-use ast::{Node, Operation, Var, FrameStack, Frame};
+use ast::{Node, Operation, Type, FrameStack, Frame};
 use parser::Parser;
 use std::collections::HashMap;
 
@@ -45,10 +45,10 @@ impl Interpreter {
     // |3|   |5|
     // +-+   +-+
     pub fn eval(&mut self, tree: Node) -> String {
-        self.eval_tree(tree)
+        self.eval_tree(tree).to_string()
     }
 
-    pub fn eval_tree(&mut self, tree: Node) -> String {
+    pub fn eval_tree(&mut self, tree: Node) -> Type {
         let Node{operation, value} = tree;
         match *operation.clone() {
             Operation::IfElse(conditional, lnode, rnode) => {
@@ -95,7 +95,7 @@ impl Interpreter {
                 }
 
                 self.scope().functions.insert(name, (params, block));
-                value
+                Type::Nil
             },
 
             Operation::DefineImut(lnode, rnode) => {
@@ -107,7 +107,7 @@ impl Interpreter {
                 }
 
                 self.scope().ilocals.insert(name, value.clone());
-                value
+                Type::Nil
             },
 
             Operation::DefineVar(lnode, rnode) => {
@@ -135,7 +135,7 @@ impl Interpreter {
                 }
 
                 self.scope().locals.insert(name, value.clone());
-                value
+                Type::Nil
             },
 
             Operation::NegUnary(node) => {
@@ -147,7 +147,7 @@ impl Interpreter {
             Operation::Block(statements) => {
                 let copy_scope = self.scope().clone();
                 self.stack.push(copy_scope);
-                let mut last_stm_return = String::new();
+                let mut last_stm_return = Type::Nil;
                 for stm in statements {
                     last_stm_return = self.eval_tree(stm.clone())
                 }
@@ -163,40 +163,37 @@ impl Interpreter {
                     condition = self.eval_tree(conditional.clone());
                 }
 
-                return String::from("nil")
+                return Type::Nil
             },
 
             Operation::Identifier(name) => self.scope().get(&*name),
 
-            Operation::Constant(var) => var.to_string(),
+            Operation::Constant(var) => var,
 
-            _ => value
+            _ => Type::Nil
         }
     }
 }
 
 // unary_operation
 // Resolves the unary operations Example: --1 == 1, 1++-1==0
-fn unary_operation(operator: &str, operand: String) -> String {
-    let ioperand = if let Ok(val) = operand.parse::<i32>() { val } else {
-        panic!("Sintax error: invalid unary operand {:?}", operand)
+fn unary_operation(operator: &str, operand: Type) -> Type {
+    let result = match (operator , operand.clone()) {
+        ("+", Type::Int(val)) => val,
+        ("-", Type::Int(val)) => -val,
+        _ => panic!("Operation error: invalid operation {:?}{:?}",
+                    operator, operand)
     };
-    let result = match operator.as_ref() {
-        "+" => ioperand,
-        "-" => -(ioperand),
-        _ => panic!("Sintax error: invalid unary operator {:?}", operator)
-    };
-
-    result.to_string()
+    Type::Int(result)
 }
 
 // binary_operation
 // Resolve binary expression for the given left, operator and right operand
-fn binary_operation(left: String, operator: String, right: String) -> String {
-    let operleft = if let Ok(val) = left.parse::<i32>() { val } else {
+fn binary_operation(left: Type, operator: String, right: Type) -> Type {
+    let operleft = if let Ok(val) = left.clone().to_string().parse::<i32>() { val } else {
         panic!("Sintax error: invalid operand: {:?}", left)
     };
-    let operright = if let Ok(val) = right.parse::<i32>() { val } else {
+    let operright = if let Ok(val) = right.clone().to_string().parse::<i32>() { val } else {
         panic!("Sintax error: invalid operand: {:?}", right)
     };
     let result = match operator.as_ref() {
@@ -207,14 +204,14 @@ fn binary_operation(left: String, operator: String, right: String) -> String {
         _ => panic!("Sintax error: invalid operator {:?}", operator)
     };
 
-    result.to_string()
+    Type::Int(result)
 }
 
 // binary_operation
 // Resolve binary expression for the given left, operator and right operand
-fn binary_comparison(left: String, operator: String, right: String) -> String {
-    let bleft = left.replace("true","1").replace("false","0");
-    let bright = right.replace("true","1").replace("false","0");
+fn binary_comparison(left: Type, operator: String, right: Type) -> Type {
+    let bleft = left.clone().to_string().replace("true","1").replace("false","0");
+    let bright = right.clone().to_string().replace("true","1").replace("false","0");
 
     let operleft = if let Ok(val) = bleft.parse::<i32>() { val } else {
         panic!("Sintax error: invalid operand: {:?}", left)
@@ -233,14 +230,14 @@ fn binary_comparison(left: String, operator: String, right: String) -> String {
         _ => panic!("Sintax error: invalid operator {:?}", operator)
     };
 
-    result.to_string()
+    Type::Bool(result)
 }
 
-fn truthy(condition: String) -> bool {
+fn truthy(condition: Type) -> bool {
     binary_comparison(
         condition,
         String::from("=="),
-        String::from("true")) == "true"
+        Type::Bool(true)).to_string() == "true"
 }
 
 #[test]
