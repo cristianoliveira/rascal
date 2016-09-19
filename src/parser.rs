@@ -531,7 +531,6 @@ fn it_parses_simple_block() {
                                  String::from("5"));
 
     let var = ast::Node::indentifier(Token{ kind: Kind::ID, value: String::from("x")});
-    let assign_token = Token{ kind: Kind::Assign, value: String::from("=")};
     let assign = ast::Node::define_mutable(var, expr);
 
     let comp = ast::Node::block(vec![assign]);
@@ -543,8 +542,6 @@ fn it_parses_multiple_statements() {
     let text = "begin mut x = 10+5; imut y = 100 end";
     let tokenizer = Tokenizer::new(String::from(text));
     let mut parser = Parser::new(tokenizer);
-    let assign_token = Token{ kind: Kind::Assign, value: String::from("=")};
-
 
     let yvar = ast::Node::indentifier(Token{ kind: Kind::CONST, value: String::from("y")});
     let yvalue = ast::Node::constant(Token{ kind: Kind::Integer, value: String::from("100")});

@@ -49,10 +49,7 @@ impl Node {
     pub fn call_function(id: Node, params: Vec<Node>) -> Self {
         Node {
             operation: Box::new(
-                Operation::CallFunc(
-                    id.clone(),
-                    params.clone()
-                    )
+                Operation::CallFunc(id, params)
                 ),
             value: String::from("=")
         }
@@ -60,26 +57,26 @@ impl Node {
     pub fn define_function(id: Node, params: Vec<Node>, block: Node) -> Self {
         Node {
             operation: Box::new(
-                Operation::DefineFunc(id.clone(), Type::Func(params, block))
+                Operation::DefineFunc(id, Type::Func(params, block))
                 ),
             value: String::from("=")
         }
     }
     pub fn define_immutable(left: Node, right: Node) -> Self {
         Node {
-            operation: Box::new(Operation::DefineImut(left.clone(), right.clone())),
+            operation: Box::new(Operation::DefineImut(left, right)),
             value: String::from("=")
         }
     }
     pub fn define_mutable(left: Node, right: Node) -> Self {
         Node {
-            operation: Box::new(Operation::DefineVar(left.clone(), right.clone())),
+            operation: Box::new(Operation::DefineVar(left, right)),
             value: String::from("=")
         }
     }
     pub fn reassign(left: Node, right: Node) -> Self {
         Node {
-            operation: Box::new(Operation::ReAssign(left.clone(), right.clone())),
+            operation: Box::new(Operation::ReAssign(left, right)),
             value: String::from("")
         }
     }
@@ -90,7 +87,7 @@ impl Node {
         }
     }
     pub fn constant(token: Token) -> Self {
-        let primitive = Type::from(token.clone());
+        let primitive = Type::from(&token);
         Node {
             operation: Box::new(Operation::Constant(primitive)),
             value: token.value
@@ -98,7 +95,7 @@ impl Node {
     }
     pub fn unary(token: Token, node: Node) -> Self {
         Node {
-            operation: Box::new(Operation::NegUnary(node.clone())),
+            operation: Box::new(Operation::NegUnary(node)),
             value: token.value
         }
     }

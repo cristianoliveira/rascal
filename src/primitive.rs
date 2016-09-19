@@ -10,8 +10,8 @@ pub enum Type {
     Nil
 }
 impl Type {
-    pub fn from(token: Token) -> Type {
-        match token {
+    pub fn from(token: &Token) -> Type {
+        match token.clone() {
             Token{kind: Kind::Integer, value} => {
                 Type::Int(value.parse::<i32>().expect("Invalid integer value."))
             },
