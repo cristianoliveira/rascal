@@ -37,6 +37,7 @@ pub enum Kind {
     Else,
 
     // Others
+    Separator,
     Space,
     EOF
 }
@@ -49,8 +50,11 @@ impl Kind {
             Some(value) => {
                 match value {
                     ';' => Kind::StatementEnd,
+                    ',' => Kind::Separator,
                     '(' => Kind::GroupBegin,
                     ')' => Kind::GroupEnd,
+                    '[' => Kind::FunctionParamBegin,
+                    ']' => Kind::FunctionParamEnd,
                     ' '|'\n' => Kind::Space,
                     '+'|'-'|'*'|'/'|'^' => Kind::Operator,
                     '0'|'1'|'2'|'3'|'4'|
@@ -68,13 +72,11 @@ impl Kind {
         match word.as_ref() {
             // Blocks Statements
             "fun" => Some(Kind::FunctionDefine),
-            "[" => Some(Kind::FunctionParamBegin),
-            "]" => Some(Kind::FunctionParamEnd),
             "imut" => Some(Kind::ImmutableDefine),
             "mut" => Some(Kind::MutableDefine),
             "=" => Some(Kind::Assign),
-            "begin"|"->" => Some(Kind::Begin),
-            "end" => Some(Kind::End),
+            "begin" | "{" => Some(Kind::Begin),
+            "end" | "}" => Some(Kind::End),
             "return" => Some(Kind::Return),
 
             // System
@@ -140,6 +142,7 @@ impl Tokenizer {
     // chaining porpouses
     pub fn advance(&mut self) -> &mut Self {
         if self.current.is_none() { self.current = self.next() }
+        println!("{:?}", self.current);
         self
     }
 
@@ -150,11 +153,19 @@ impl Tokenizer {
         self.current.clone()
     }
 
+    pub fn peek(&self, next: usize) -> Option<Token> {
+        let value = self.text.chars().nth(self.position + next);
+        println!("peeked {:?}", value);
+        Some(Token::build(Kind::classify(&value), format!("{}", value.unwrap())))
+    }
+
     // consume
     //
     // It is responsible for consume the current Token validating the expected
     // token for the expression sintax
     pub fn consume(&mut self, expected_kind: Kind) -> Token {
+        println!("expected {:?}", expected_kind);
+        println!("consumed {:?}", self.current);
         if let Some(token) = self.current.clone() {
             self.current = None;
             if token.kind != expected_kind {
@@ -184,7 +195,7 @@ impl Iterator for Tokenizer {
 
             Kind::Space => self.next(),
 
-            Kind::Operator =>
+            Kind::GroupBegin | Kind::GroupEnd | Kind::Operator =>
                 Some(Token::build(kind, format!("{}", current.unwrap()))),
 
             Kind::Alphanum => {
@@ -426,6 +437,78 @@ fn it_acepts_if_else_statements() {
     assert_eq!(
         tokens.next(),
         Some(Token { kind: Kind::Else, value: String::from("else") })
+    );
+}
+
+#[test]
+fn it_acepts_function_definitions() {
+    let text = "fun f = [ x, y ] { x * 2 }";
+    let mut tokens = Tokenizer::new(String::from(text));
+    assert_eq!(
+        tokens.next(),
+        Some(Token { kind: Kind::FunctionDefine, value: String::from("fun") })
+    );
+    assert_eq!(
+        tokens.next(),
+        Some(Token { kind: Kind::ID, value: String::from("f") })
+    );
+    assert_eq!(
+        tokens.next(),
+        Some(Token { kind: Kind::Assign, value: String::from("=") })
+    );
+    assert_eq!(
+        tokens.next(),
+        Some(Token { kind: Kind::FunctionParamBegin, value: String::from("[") })
+    );
+    assert_eq!(
+        tokens.next(),
+        Some(Token { kind: Kind::ID, value: String::from("x") })
+    );
+    assert_eq!(
+        tokens.next(),
+        Some(Token { kind: Kind::Separator, value: String::from(",") })
+    );
+    assert_eq!(
+        tokens.next(),
+        Some(Token { kind: Kind::ID, value: String::from("y") })
+    );
+    assert_eq!(
+        tokens.next(),
+        Some(Token { kind: Kind::FunctionParamEnd, value: String::from("]") })
+    );
+    assert_eq!(
+        tokens.next(),
+        Some(Token { kind: Kind::Begin, value: String::from("{") })
+    );
+}
+
+#[test]
+fn it_acepts_function_calls() {
+    let text = "foo(x,y);";
+    let mut tokens = Tokenizer::new(String::from(text));
+    assert_eq!(
+        tokens.next(),
+        Some(Token { kind: Kind::ID, value: String::from("foo") })
+    );
+    assert_eq!(
+        tokens.next(),
+        Some(Token { kind: Kind::GroupBegin, value: String::from("(") })
+    );
+    assert_eq!(
+        tokens.next(),
+        Some(Token { kind: Kind::ID, value: String::from("x") })
+    );
+    assert_eq!(
+        tokens.next(),
+        Some(Token { kind: Kind::Separator, value: String::from(",") })
+    );
+    assert_eq!(
+        tokens.next(),
+        Some(Token { kind: Kind::ID, value: String::from("y") })
+    );
+    assert_eq!(
+        tokens.next(),
+        Some(Token { kind: Kind::GroupEnd, value: String::from(")") })
     );
 }
 
