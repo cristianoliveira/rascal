@@ -33,13 +33,15 @@ rascal ./example.rl
 # Structure
   * Integers: `0-9`
   * Boolean: `true`, `false`
-  * Imutables variables: `imut x;`
+  * Imutables variables: `imut x = 1;`
   * Assign values: `x = 0;`
   * Blocks: `begin .. end`
-  * Comparison: `==`,`!=`, `>`, `<`, `and`, `or`
+  * Operator: `+`, `-`, `*`, `/` and `%`
+  * Comparison: `==`,`!=`, `>`, `<`, `and` and `or`
   * If else: `if 1==1 begin .. else .. end`
   * Loop: `while 1==1 begin .. end`
   * Function: `fn foo = [x] { x + 1 }`
+  * Print: `print (1+1)`
 
 Each statement requires a `;` unless the last statement. Example of runnable code:
 ### Integers expressions
@@ -122,9 +124,7 @@ Result: 11
 ### High Order Functions
 ```ruby
 begin
-  fn composed = [f] {
-    f(10)
-  };
+  fn composed = [f] { f(10) };
   fn foo = [x] { x + 1 };
   
   composed(foo)
