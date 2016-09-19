@@ -4,12 +4,13 @@ A functional interpreted language made by Rust
 ## Features of functional languages
 According with [Haskel wiki](https://wiki.haskell.org/Functional_programming) the features of a functional language are:
 
+ - [x] Functions
  - [ ] Higher-order functions
  - [ ] Purity
  - [x] Immutable data
  - [ ] Referential transparency
  - [ ] Lazy evaluation
- - [ ] Recursion
+ - [x] Recursion
 
 # Use
 ```bash
@@ -38,6 +39,7 @@ rascal ./example.rl
   * Comparison: `==`,`!=`, `>`, `<`, `and`, `or`
   * If else: `if 1==1 begin .. else .. end`
   * Loop: `while 1==1 begin .. end`
+  * Function: `fun foo = [x] { return x + 1 }`
 
 Each statement requires a `;` unless the last statement. Example of runnable code:
 ### Integers expressions
@@ -106,6 +108,16 @@ begin
 end
 ```
 Error: Variable x doesn't exists in this context
+
+### Functions
+```ruby
+begin
+  fun foo = [x] { return x + 1 };
+  
+  foo(10)
+end
+```
+Result: 11
 
 ## Future implementations
   * Strings: support for strings
