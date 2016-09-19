@@ -72,11 +72,11 @@ begin
   imut x = 2;
   mut y = 0;
 
-  if x != 2 begin
+  if x != 2 {
     y = 13
   else
     y = 42
-  end
+  };
 
   y == 42
 end
@@ -88,9 +88,9 @@ Result: true
 begin
   mut y = 0;
 
-  while y < 4 begin
+  while y < 4 {
     y = y + 1
-  end;
+  };
 
   y == 4
 end
@@ -102,9 +102,9 @@ Result: true
 begin
   mut y = 0;
 
-  begin
+  {
     mut x = y + 1
-  end;
+  };
 
   x == 4
 end
@@ -151,13 +151,13 @@ begin
   mut a = 10;
   mut b = 1;
 
-  while b != 0 begin
+  while b != 0 {
     if a > b then
       a = a - b;
     else
       b = b - a;
     end
-  end
+  }
 
   return a
 end
