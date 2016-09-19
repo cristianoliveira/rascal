@@ -94,4 +94,35 @@ mod functions {
         assert_eq!("11", result);
     }
 
+    #[test]
+    fn it_eval_high_order_functions() {
+        let source =
+        "begin
+           fun foo = [x] {
+             return x + 1
+           };
+           imut other = foo;
+           other(6)
+         end";
+
+        let result = rascal::eval(String::from(source));
+        assert_eq!("7", result);
+    }
+
+    #[test]
+    fn it_accepts_function_as_params() {
+        let source =
+        "begin
+           fun composed = [f] {
+             f(10)
+           };
+           fun foo = [x] {
+             return x + 1
+           };
+           composed(foo)
+         end";
+
+        let result = rascal::eval(String::from(source));
+        assert_eq!("11", result);
+    }
 }

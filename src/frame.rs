@@ -31,7 +31,6 @@ impl FrameStack {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Frame {
-    pub functions: HashMap<String, Type>,
     pub iparents: HashMap<String, Type>,
     pub parents: HashMap<String, Type>,
     pub ilocals: HashMap<String, Type>,
@@ -40,7 +39,6 @@ pub struct Frame {
 impl Frame {
     pub fn new() -> Self {
         Frame {
-            functions: HashMap::new(),
             locals: HashMap::new(),
             parents: HashMap::new(),
             ilocals: HashMap::new(),

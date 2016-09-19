@@ -75,7 +75,8 @@ impl Interpreter {
                 self.stack.push(func_frame);
 
                 let name = nodename.value;
-                if let Type::Func(fparams, block) = self.scope().functions.get(&*name).unwrap().clone() {
+                println!("calling {}", name);
+                if let Type::Func(fparams, block) = self.scope().get(&*name).clone() {
                     for (pname, pvalue) in fparams.iter().zip(params.iter()) {
                         let value = self.eval_tree(pvalue.clone());
                         self.scope().locals.insert(pname.clone().value, value);
@@ -93,7 +94,7 @@ impl Interpreter {
                     panic!("Value error: variable {} has already defined.", name)
                 }
 
-                self.scope().functions.insert(name, func);
+                self.scope().ilocals.insert(name, func);
                 Type::Nil
             },
 
