@@ -1,8 +1,9 @@
 use token::{Token, Kind, Tokenizer};
-use ast::{Node, Operation, FrameStack, Frame};
+use ast::{Node, Operation};
 use parser::Parser;
 use std::collections::HashMap;
 use primitive::Type;
+use frame::{Frame, FrameStack};
 
 // # Interpreter
 //

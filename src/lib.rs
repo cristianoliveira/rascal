@@ -3,6 +3,7 @@ mod interpreter;
 mod ast;
 mod parser;
 mod primitive;
+mod frame;
 
 pub fn eval(source: String) -> String {
     let tokenizer = token::Tokenizer::new(source);
