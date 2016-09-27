@@ -243,29 +243,29 @@ impl Parser {
 
                 ast::Node::define_function(var, params, block)
             },
-            Some(Token{ kind: Kind:: MutableDefine , ..}) => {
-                self.tokenizer.consume(Kind::MutableDefine);
-                self.tokenizer.advance();
-
-                let (var, _, expr) = (
-                    self.variable(),
-                    self.tokenizer.advance().consume(Kind::Assign),
-                    self.expr()
-                );
-
-                ast::Node::define_mutable(var, expr)
-            },
             _ => {
                 self.tokenizer.consume(Kind::ImmutableDefine);
                 self.tokenizer.advance();
 
-                let (var, _, expr) = (
-                    self.constant(),
-                    self.tokenizer.advance().consume(Kind::Assign),
-                    self.expr()
-                );
+                if let Some(Token{kind: Kind::MutableDefine,..}) = self.tokenizer.get() {
+                    self.tokenizer.consume(Kind::MutableDefine);
+                    self.tokenizer.advance();
+                    let (var, _, expr) = (
+                        self.variable(),
+                        self.tokenizer.advance().consume(Kind::Assign),
+                        self.expr()
+                    );
 
-                ast::Node::define_immutable(var, expr)
+                    ast::Node::define_mutable(var, expr)
+                } else {
+                    let (var, _, expr) = (
+                        self.constant(),
+                        self.tokenizer.advance().consume(Kind::Assign),
+                        self.expr()
+                        );
+
+                    ast::Node::define_immutable(var, expr)
+                }
             }
         }
     }
@@ -534,7 +534,7 @@ fn it_parses_respecting_parentesis_precedence() {
 
 #[test]
 fn it_parses_simple_block() {
-    let text = "begin mut x = 10+5 end";
+    let text = "begin let mut x = 10+5 end";
     let tokenizer = Tokenizer::new(String::from(text));
     let mut parser = Parser::new(tokenizer);
 
@@ -565,7 +565,7 @@ fn it_parses_block_single_expression() {
 
 #[test]
 fn it_parses_multiple_statements() {
-    let text = "begin mut x = 10+5; imut y = 100 end";
+    let text = "begin let mut x = 10+5; let y = 100 end";
     let tokenizer = Tokenizer::new(String::from(text));
     let mut parser = Parser::new(tokenizer);
 

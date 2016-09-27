@@ -68,7 +68,7 @@ impl Kind {
         match word.as_ref() {
             // Blocks Statements
             "fn" => Some(Kind::FunctionDefine),
-            "imut" => Some(Kind::ImmutableDefine),
+            "let" | "imut" => Some(Kind::ImmutableDefine),
             "mut" => Some(Kind::MutableDefine),
             "=" => Some(Kind::Assign),
             "begin" | "{" => Some(Kind::Begin),

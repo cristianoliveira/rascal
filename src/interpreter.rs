@@ -395,7 +395,7 @@ mod test {
 
     #[test]
     fn it_eval_block_assigning_vars_to_symbol_table() {
-        let text = "begin mut x = 10; return x end";
+        let text = "begin let mut x = 10; return x end";
         let tokenizer = Tokenizer::new(String::from(text));
         let mut parser = Parser::new(tokenizer);
         let mut interpreter = Interpreter::new();
@@ -405,7 +405,7 @@ mod test {
 
     #[test]
     fn it_eval_block_retrieve_vars_from_symbol_table() {
-        let text = "begin imut x = 10; mut y = x + 5; return y end";
+        let text = "begin let x = 10; let mut y = x + 5; return y end";
         let tokenizer = Tokenizer::new(String::from(text));
         let mut parser = Parser::new(tokenizer);
         let mut interpreter = Interpreter::new();

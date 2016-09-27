@@ -13,7 +13,7 @@ mod examples {
     }
 
     #[test]
-    fn it_can_print_expression() {
+    fn prooject_euler_1() {
         let source = load_file("./examples/projecteuler1.rl");
         assert_eq!("23", rascal::eval(String::from(source)));
     }

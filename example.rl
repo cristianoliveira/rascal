@@ -1,6 +1,6 @@
 begin
-  imut x = 2;
-  mut y = 0;
+  let x = 2;
+  let mut y = 0;
 
   while y < 10 begin
     y = x + y
