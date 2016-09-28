@@ -8,7 +8,7 @@ According with [Haskel wiki](https://wiki.haskell.org/Functional_programming) th
  - [x] Higher-order functions
  - [ ] Purity
  - [x] Immutable data
- - [ ] Referential transparency
+ - [x] Referential transparency
  - [ ] Lazy evaluation
  - [x] Recursion
 
