@@ -1,4 +1,4 @@
-# Rascal
+# Rascal [![Build Status](https://travis-ci.org/cristianoliveira/rascal.svg?branch=master)](https://travis-ci.org/cristianoliveira/rascal)
 A functional interpreted language made by Rust
 
 ## Features of functional languages
@@ -36,11 +36,11 @@ rascal ./example.rl
   * Imutables by default: `let x = 1;`
   * Mutables explicit: `let mut x = 1;`
   * Assign values: `x = 0;`
-  * Blocks: `begin .. end`
+  * Blocks: `{ .. }`
   * Operator: `+`, `-`, `*`, `/` and `%`
   * Comparison: `==`,`!=`, `>`, `<`, `and` and `or`
-  * If else: `if 1==1 begin .. else .. end`
-  * Loop: `while 1==1 begin .. end`
+  * If else: `if 1==1 { .. else .. }`
+  * Loop: `while 1==1 { .. }`
   * Function: `fn foo = [x] { x + 1 }`
   * Print: `print (1+1)`
 
