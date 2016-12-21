@@ -5,6 +5,7 @@ use primitive::Type;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Operation {
+    Main(Vec<Node>),
     Identifier(String),
     Constant(Type),
     Binary(Node, String, Node),
@@ -35,6 +36,12 @@ pub struct Node{
 }
 
 impl Node {
+    pub fn main(statements: Vec<Node>) -> Self {
+        Node {
+            operation: Box::new(Operation::Main(statements)),
+            value: String::new(),
+        }
+    }
     pub fn binary(left: Node, token: String, right: Node) -> Self {
         Node {
             operation: Box::new(Operation::Binary(left, token.clone(), right)),

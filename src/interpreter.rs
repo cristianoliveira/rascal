@@ -50,6 +50,14 @@ impl Interpreter {
     pub fn eval_tree(&mut self, tree: Node) -> Type {
         let Node{operation, ..} = tree;
         match *operation.clone() {
+            Operation::Main(statements) => {
+                let mut last_stm_return = Type::Nil;
+                for statement in statements {
+                    last_stm_return = self.eval_tree(statement)
+                }
+                last_stm_return
+            },
+
             Operation::IfElse(conditional, lnode, rnode) => {
                 let condition = self.eval_tree(conditional);
 

@@ -58,9 +58,7 @@ pub struct Parser {
 
 impl Parser {
     pub fn new(lexer: Tokenizer) -> Self {
-        Parser {
-            tokenizer: lexer,
-        }
+        Parser { tokenizer: lexer }
     }
 
     // function_call
@@ -453,10 +451,7 @@ impl Parser {
     }
 
     pub fn parse(&mut self) -> ast::Node {
-        match self.tokenizer.advance().get() {
-            Some(Token{kind: Kind::Begin, ..}) => self.block(),
-            _ => self.statement()
-        }
+        ast::Node::main(self.statement_list())
     }
 }
 
@@ -478,7 +473,7 @@ fn it_parses_sum_as_node() {
                                      String::from("+"),
                                      String::from("1"));
 
-    assert_eq!(expected, parser.parse());
+    assert_eq!(ast::Node::main(vec![expected]), parser.parse());
 }
 
 #[test]
@@ -495,7 +490,7 @@ fn it_parses_multiples_operation() {
     let rnode = ast::Node::constant(Token::build(Kind::Integer, String::from("4")));
 
     let expected = ast::Node::binary(firstsum, token.value, rnode);
-    assert_eq!(expected, parser.parse());
+    assert_eq!(ast::Node::main(vec![expected]), parser.parse());
 }
 
 #[test]
@@ -512,7 +507,7 @@ fn it_parses_respecting_precedence() {
     let rnode = ast::Node::constant(Token::build(Kind::Integer, String::from("10")));
 
     let expected = ast::Node::binary(rnode, token.value, plusnode);
-    assert_eq!(expected, parser.parse());
+    assert_eq!(ast::Node::main(vec![expected]), parser.parse());
 }
 
 #[test]
@@ -529,7 +524,7 @@ fn it_parses_respecting_parentesis_precedence() {
     let rnode = ast::Node::constant(Token::build(Kind::Integer, String::from("4")));
 
     let expected = ast::Node::binary(plusnode, token.value, rnode);
-    assert_eq!(expected, parser.parse());
+    assert_eq!(ast::Node::main(vec![expected]), parser.parse());
 }
 
 #[test]
@@ -545,8 +540,8 @@ fn it_parses_simple_block() {
     let var = ast::Node::indentifier(Token{ kind: Kind::ID, value: String::from("x")});
     let assign = ast::Node::define_mutable(var, expr);
 
-    let comp = ast::Node::block(vec![assign]);
-    assert_eq!(comp, parser.parse());
+    let expected = ast::Node::block(vec![assign]);
+    assert_eq!(ast::Node::main(vec![expected]), parser.parse());
 }
 
 #[test]
@@ -559,13 +554,13 @@ fn it_parses_block_single_expression() {
                                  String::from("+"),
                                  String::from("5"));
 
-    let comp = ast::Node::block(vec![expr]);
-    assert_eq!(comp, parser.parse());
+    let expected = ast::Node::block(vec![expr]);
+    assert_eq!(ast::Node::main(vec![expected]), parser.parse());
 }
 
 #[test]
 fn it_parses_multiple_statements() {
-    let text = "begin let mut x = 10+5; let y = 100 end";
+    let text = "let mut x = 10+5; let y = 100";
     let tokenizer = Tokenizer::new(String::from(text));
     let mut parser = Parser::new(tokenizer);
 
@@ -579,8 +574,8 @@ fn it_parses_multiple_statements() {
     let xvar = ast::Node::indentifier(Token{ kind: Kind::ID, value: String::from("x")});
     let xassign = ast::Node::define_mutable(xvar, expr);
 
-    let comp = ast::Node::block(vec![xassign, yassign]);
-    assert_eq!(comp, parser.parse());
+    let expected = ast::Node::main(vec![xassign, yassign]);
+    assert_eq!(expected, parser.parse());
 }
 
 #[test]
@@ -592,9 +587,10 @@ fn it_parses_bolean_comparison() {
     let lcompar = ast::Node::constant(Token::build(Kind::Bolean, String::from("true")));
     let rcompar = ast::Node::constant(Token::build(Kind::Bolean, String::from("false")));
     let tkcompar = Token::build(Kind::Comparison, String::from("=="));
-    let comparison = ast::Node::comparison(lcompar, tkcompar.value, rcompar);
+    let statement = ast::Node::comparison(lcompar, tkcompar.value, rcompar);
 
-    assert_eq!(comparison, parser.parse());
+    let expected = ast::Node::main(vec![statement]);
+    assert_eq!(expected, parser.parse());
 }
 
 #[test]
@@ -611,7 +607,8 @@ fn it_parses_bolean_expression() {
     let token = Token::build(Kind::Comparison, String::from("and"));
     let rnode = ast::Node::constant(Token::build(Kind::Bolean, String::from("true")));
 
-    let expected = ast::Node::comparison(rnode, token.value, comparison);
+    let statement = ast::Node::comparison(rnode, token.value, comparison);
+    let expected = ast::Node::main(vec![statement]);
     assert_eq!(expected, parser.parse());
 }
 
@@ -634,7 +631,7 @@ fn it_parses_expressions_gt_lt() {
     let rnode = ast::Node::comparison(lcompar2, tkcompa2.value, rcompar2);
 
     let expected = ast::Node::comparison(lnode, token.value, rnode);
-    assert_eq!(expected, parser.parse());
+    assert_eq!(ast::Node::main(vec![expected]), parser.parse());
 }
 
 
@@ -659,6 +656,6 @@ fn it_parses_function_define() {
 
     let fundefine = ast::Node::define_function(fun, params, block);
     let program = ast::Node::block(vec![fundefine]);
-    assert_eq!(program, parser.parse());
+    assert_eq!(ast::Node::main(vec![program]), parser.parse());
 }
 
