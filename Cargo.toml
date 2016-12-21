@@ -1,6 +1,6 @@
 [package]
 name = "rascal"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["Cristian Oliveira <contato@cristianoliveira.com.br>"]
 description = "A language based on Ruby/Pascal."
 license = "MIT"

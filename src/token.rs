@@ -135,7 +135,6 @@ impl Tokenizer {
     // chaining porpouses
     pub fn advance(&mut self) -> &mut Self {
         if self.current.is_none() { self.current = self.next() }
-        println!("{:?}", self.current);
         self
     }
 
@@ -150,7 +149,6 @@ impl Tokenizer {
         let curr_position = self.position.clone();
         let next = self.next();
         self.position = curr_position;
-        println!("peeked {:?}", next);
         next
     }
 
@@ -159,8 +157,6 @@ impl Tokenizer {
     // It is responsible for consume the current Token validating the expected
     // token for the expression sintax
     pub fn consume(&mut self, expected_kind: Kind) -> Token {
-        println!("expected {:?}", expected_kind);
-        println!("consumed {:?}", self.current);
         if let Some(token) = self.current.clone() {
             self.current = None;
             if token.kind != expected_kind {

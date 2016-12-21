@@ -14,7 +14,7 @@ use ast;
 //   statement_list: statement
 //   statement_list: statement STATEMENT_END statement_list
 //
-//   statement: compoud_statement
+//   statement: block
 //   statement: return_statement
 //   statement: while
 //   statement: if
@@ -117,7 +117,7 @@ impl Parser {
     // statement can be a compoud, assign or empty statement.
     // Represented as context free grammar:
     // ```
-    //   statement: compoud_statement
+    //   statement: block
     //   statement: return_statement
     //   statement: while_block
     //   statement: if_block
@@ -163,7 +163,7 @@ impl Parser {
 
     // assign_statement
     //
-    // assign_statement is an constant followed by an assign token followed by 
+    // assign_statement is an constant followed by an assign token followed by
     // an expression (expr). Represented as context free grammar:
     // ```
     //   assign_statement: constant ASSIGN expr
@@ -192,7 +192,7 @@ impl Parser {
 
     // if
     //
-    // if is a IF BEGIN followed by statement_list followed optionally by 
+    // if is a IF BEGIN followed by statement_list followed optionally by
     // ELSE followed by statement_list followed by END
     // Represented as context free grammar:
     // ```
@@ -292,7 +292,7 @@ impl Parser {
         ast::Node::indentifier(token)
     }
 
-    // args_list 
+    // args_list
     // args_list is an ID that can be followed by SEPARATOR followed by ID
     // Represented as context free grammar:
     // ```
@@ -316,11 +316,11 @@ impl Parser {
         args
     }
 
-    // params_list 
+    // params_list
     // params_list is an ID that can be followed by SEPARATOR followed by ID
     // Represented as context free grammar:
     // ```
-    //   params_list: [ID] 
+    //   params_list: [ID]
     //   params_list: [ID SEPARATOR params_list]
     // ```
     fn params_list(&mut self) -> Vec<ast::Node> {
@@ -455,7 +455,7 @@ impl Parser {
     pub fn parse(&mut self) -> ast::Node {
         match self.tokenizer.advance().get() {
             Some(Token{kind: Kind::Begin, ..}) => self.block(),
-            _ => self.expr()
+            _ => self.statement()
         }
     }
 }
