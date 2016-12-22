@@ -142,6 +142,18 @@ composed(foo)
 ```
 Result: 11
 
+### Closures
+```rust
+let mut state = 0;
+
+fn mutstate = [x] { state = state + x };
+mutstate(10);
+mutstate(5);
+
+state
+```
+Result: 15
+
 ## Future implementations
   * Strings: support for strings
   * String comparison: support for compare strings
