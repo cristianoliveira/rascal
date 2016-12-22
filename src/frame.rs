@@ -54,16 +54,16 @@ impl Frame {
         self.ilocals.contains_key(id)
     }
 
-    pub fn get(&self, id: &str) -> Type {
+    pub fn get(&self, id: &str) -> Option<Type> {
         // parenfunctionst
-        if let Some(value) = self.iparents.get(&*id) { return value.clone() };
-        if let Some(value) = self.parents.get(&*id) { return value.clone() };
+        if let Some(value) = self.iparents.get(&*id) { return Some(value.clone()) };
+        if let Some(value) = self.parents.get(&*id) { return Some(value.clone()) };
         // current
-        if let Some(value) = self.ilocals.get(&*id) { return value.clone() };
+        if let Some(value) = self.ilocals.get(&*id) { return Some(value.clone()) };
         if let Some(value) = self.locals.get(&*id) {
-            return value.clone()
+            Some(value.clone())
         } else {
-            panic!("Variable {} doesn't exists in this context", id)
+            None
         }
     }
 }

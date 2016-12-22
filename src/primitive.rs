@@ -3,11 +3,7 @@ use ast::Node;
 use std::cmp::Ord;
 use std::cmp::Ordering;
 use std::cmp::Eq;
-use std::ops::Add;
-use std::ops::Sub;
-use std::ops::Mul;
-use std::ops::Div;
-use std::ops::Rem;
+use std::ops::{Add, Sub, Mul, Div, Rem};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Type {
@@ -132,6 +128,7 @@ impl Rem for Type {
         }
     }
 }
+
 #[cfg(test)]
 mod integer {
     use primitive::Type;

@@ -72,7 +72,6 @@ mod blocks {
     }
 
     #[test]
-    #[should_panic(expected="Value error: imutable y was reassigned.")]
     fn it_validate_immutable_reassign() {
         let source =
         "begin
@@ -80,7 +79,8 @@ mod blocks {
            y = 1;
            return y
          end";
-        rascal::eval(String::from(source));
+        assert_eq!("Value error: imutable y was reassigned.",
+                   rascal::eval(String::from(source)));
     }
 
     #[test]
@@ -96,7 +96,6 @@ mod blocks {
     }
 
     #[test]
-    #[should_panic(expected="Value error: variable x used before declared.")]
     fn it_validate_not_declared_var() {
         let source =
         "begin
@@ -104,11 +103,11 @@ mod blocks {
            x = 1;
            return x
          end";
-        rascal::eval(String::from(source));
+        assert_eq!("Value error: variable x used before declared.",
+                   rascal::eval(String::from(source)));
     }
 
     #[test]
-    #[should_panic(expected = "Variable y doesn't exists in this context")]
     fn it_validates_block_context() {
         let source =
         "begin
@@ -118,14 +117,14 @@ mod blocks {
            end;
            return y
          end";
-        rascal::eval(String::from(source));
+        assert_eq!("Variable y doesn't exists in this context",
+                   rascal::eval(String::from(source)));
     }
 
     #[test]
-    #[should_panic(expected = "Variable z doesn't exists in this context")]
     fn it_validates_nested_block_context() {
         let source =
-        "begin
+        "
            let mut x = 0;
            begin
              let mut y = x;
@@ -133,23 +132,24 @@ mod blocks {
              x = z
            end;
            return x
-         end";
-        rascal::eval(String::from(source));
+        ";
+        assert_eq!("Variable z doesn't exists in this context",
+                   rascal::eval(String::from(source)));
     }
 
     #[test]
-    #[should_panic(expected="Value error: variable x has already defined.")]
     fn it_has_nested_block_context() {
         let source =
-        "begin
+        "
            let mut x = 0;
            begin
              let mut x = 10;
              x = 15
            end;
            return x
-         end";
-        rascal::eval(String::from(source));
+        ";
+        assert_eq!("Value error: variable x has already defined.",
+                   rascal::eval(String::from(source)));
     }
 
     #[test]

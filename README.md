@@ -44,6 +44,22 @@ rascal ./example.rl
   * Function: `fn foo = [x] { x + 1 }`
   * Print: `print (1+1)`
 
+### Example
+  First project euler challenge:
+  ```rust
+    let mut sum = 0;
+    let mut number = 0;
+
+    fn is_multiple = [x, y] { (x % y) == 0 };
+
+    while number < 10 {
+      if is_multiple(number, 5) or is_multiple(number, 3) { sum = sum + number };
+      number = number + 1
+    };
+
+    sum
+  ```
+
 Each statement requires a `;` unless the last statement. Example of runnable code:
 ### Integers expressions
 ```rust

@@ -44,22 +44,29 @@ impl Interpreter {
     // |3|   |5|
     // +-+   +-+
     pub fn eval(&mut self, tree: Node) -> String {
-        self.eval_tree(tree).to_string()
+        match self.eval_tree(tree) {
+            Ok(result) => result.to_string(),
+            Err(error) => error
+        }
     }
 
-    pub fn eval_tree(&mut self, tree: Node) -> Type {
+    pub fn eval_tree(&mut self, tree: Node) -> Result<Type, String> {
         let Node{operation, ..} = tree;
         match *operation.clone() {
             Operation::Main(statements) => {
-                let mut last_stm_return = Type::Nil;
+                let mut last_stm_return = Ok(Type::Nil);
                 for statement in statements {
-                    last_stm_return = self.eval_tree(statement)
+                    last_stm_return = self.eval_tree(statement);
+
+                    if last_stm_return.is_err() {
+                        break
+                    }
                 }
                 last_stm_return
             },
 
             Operation::IfElse(conditional, lnode, rnode) => {
-                let condition = self.eval_tree(conditional);
+                let condition = try!(self.eval_tree(conditional));
 
                 if truthy(condition) {
                     self.eval_tree(lnode)
@@ -70,13 +77,18 @@ impl Interpreter {
 
             Operation::Binary(lnode, operator, rnode) => {
                 binary_operation(
-                    self.eval_tree(lnode), operator, self.eval_tree(rnode)
+                    try!(self.eval_tree(lnode)),
+                    operator,
+                    try!(self.eval_tree(rnode))
                 )
             },
 
             Operation::Comparison(lnode, operator, rnode) =>
                 binary_comparison(
-                    self.eval_tree(lnode), operator, self.eval_tree(rnode)),
+                    try!(self.eval_tree(lnode)),
+                    operator,
+                    try!(self.eval_tree(rnode))
+                ),
 
             Operation::CallFunc(nodename, params) => {
                 let func_frame = self.scope().clone();
@@ -84,155 +96,165 @@ impl Interpreter {
 
                 let name = nodename.value;
                 // println!("calling {}", name);
-                if let Type::Func(fparams, block) = self.scope().get(&*name).clone() {
+                if let Some(Type::Func(fparams, block)) = self.scope().get(&*name).clone() {
                     for (pname, pvalue) in fparams.iter().zip(params.iter()) {
-                        let value = self.eval_tree(pvalue.clone());
+                        let value = try!(self.eval_tree(pvalue.clone()));
                         self.scope().locals.insert(pname.clone().value, value);
                     }
 
                     self.eval_tree(block)
                 } else {
-                    panic!("Value error: {} is not callable", name)
+                    return Err(format!("Value error: {} is not callable", name))
                 }
             },
 
             Operation::DefineFunc(lnode, func) => {
                 let name = lnode.value;
                 if self.scope().has(&*name) {
-                    panic!("Value error: variable {} has already defined.", name)
+                    return Err(format!("Value error: variable {} has already defined.", name))
                 }
 
                 self.scope().ilocals.insert(name, func);
-                Type::Nil
+                Ok(Type::Nil)
             },
 
             Operation::DefineImut(lnode, rnode) => {
                 let name = lnode.value;
-                let value = self.eval_tree(rnode);
+                let value = try!(self.eval_tree(rnode));
 
                 if self.scope().has(&*name) {
-                    panic!("Value error: variable {} has already defined.", name)
+                    return Err(format!("Value error: variable {} has already defined.", name))
                 }
 
                 self.scope().ilocals.insert(name, value.clone());
-                Type::Nil
+                Ok(Type::Nil)
             },
 
             Operation::DefineVar(lnode, rnode) => {
                 let name = lnode.value;
-                let value = self.eval_tree(rnode);
 
                 if self.scope().has(&*name) {
-                    panic!("Value error: variable {} has already defined.", name)
+                    return Err(format!("Value error: variable {} has already defined.", name))
                 }
 
+                let value = try!(self.eval_tree(rnode));
+
                 self.scope().locals.insert(name, value.clone());
-                value
+                Ok(value)
             },
 
             Operation::ReAssign(lnode, rnode) => {
                 let name = lnode.value;
-                let value = self.eval_tree(rnode);
 
                 if !self.scope().has(&*name) {
-                    panic!("Value error: variable {} used before declared.", name)
+                    return Err(format!("Value error: variable {} used before declared.", name))
                 }
 
                 if self.scope().is_imutable(&*name) {
-                    panic!("Value error: imutable {} was reassigned.", name)
+                    return Err(format!("Value error: imutable {} was reassigned.", name))
                 }
 
+                let value = try!(self.eval_tree(rnode));
+
                 self.scope().locals.insert(name, value.clone());
-                Type::Nil
+                Ok(value)
             },
 
             Operation::NegUnary(node) => {
-                unary_operation("-", self.eval_tree(node))
+                unary_operation("-", try!(self.eval_tree(node)))
             },
 
             Operation::Return(node) => self.eval_tree(node),
 
             Operation::Print(node) => {
-                let result = self.eval_tree(node);
+                let result = try!(self.eval_tree(node));
                 println!("{}", result.to_string());
-                Type::Nil
+                Ok(Type::Nil)
             },
 
             Operation::Block(statements) => {
                 let copy_scope = self.scope().clone();
                 self.stack.push(copy_scope);
-                let mut last_stm_return = Type::Nil;
+                let mut last_stm_return = Ok(Type::Nil);
                 for stm in statements {
-                    last_stm_return = self.eval_tree(stm.clone())
+                    last_stm_return = self.eval_tree(stm.clone());
+
+                    if last_stm_return.is_err() {
+                        break
+                    }
                 }
                 self.stack.pop();
                 last_stm_return
             },
 
             Operation::Loop(conditional, block) => {
-                let mut condition = self.eval_tree(conditional.clone());
+                let mut condition = try!(self.eval_tree(conditional.clone()));
 
                 while truthy(condition) {
-                    let _ = self.eval_tree(block.clone());
-                    condition = self.eval_tree(conditional.clone());
+                    let _ = try!(self.eval_tree(block.clone()));
+                    condition = try!(self.eval_tree(conditional.clone()));
                 }
 
-                return Type::Nil
+                Ok(Type::Nil)
             },
 
-            Operation::Identifier(name) => self.scope().get(&*name),
+            Operation::Identifier(name) => {
+                if let Some(value) = self.scope().get(&*name) {
+                    Ok(value)
+                } else {
+                    Err(format!("Variable {} doesn't exists in this context", name))
+                }
+            },
 
-            Operation::Constant(var) => var,
+            Operation::Constant(var) => Ok(var),
 
-            _ => Type::Nil
+            _ => Ok(Type::Nil)
         }
     }
 }
 
 // unary_operation
 // Resolves the unary operations Example: --1 == 1, 1++-1==0
-fn unary_operation(operator: &str, operand: Type) -> Type {
-    let result = match (operator , operand.clone()) {
-        ("+", Type::Int(val)) => val,
-        ("-", Type::Int(val)) => -val,
-        _ => panic!("Operation error: invalid operation {:?}{:?}",
-                    operator, operand)
-    };
-    Type::Int(result)
+fn unary_operation(operator: &str, operand: Type) -> Result<Type, String> {
+    match (operator , operand.clone()) {
+        ("+", Type::Int(val)) => Ok(Type::Int(val)),
+        ("-", Type::Int(val)) => Ok(Type::Int(-val)),
+        _ => Err(format!("Operation error: invalid operation {:?}{:?}",
+                    operator, operand))
+    }
 }
 
 // binary_operation
 // Resolve binary expression for the given left, operator and right operand
-fn binary_operation(left: Type, operator: String, right: Type) -> Type {
+fn binary_operation(left: Type, operator: String, right: Type) -> Result<Type, String> {
     match (left, operator.as_ref(), right) {
-        (r, "*", l) => return r * l,
-        (r, "/", l) => return r / l,
-        (r, "+", l) => return r + l,
-        (r, "-", l) => return r - l,
-        (r, "%", l) => return r % l,
-        _ => panic!("Sintax error: invalid operator {:?}", operator)
-    };
+        (r, "*", l) => Ok(r * l),
+        (r, "/", l) => Ok(r / l),
+        (r, "+", l) => Ok(r + l),
+        (r, "-", l) => Ok(r - l),
+        (r, "%", l) => Ok(r % l),
+        _ => Err(format!("Sintax error: invalid operator {:?}", operator))
+    }
 }
 
 // binary_operation
 // Resolve binary expression for the given left, operator and right operand
-fn binary_comparison(left: Type, operator: String, right: Type) -> Type {
-    let result = match operator.as_ref() {
-        "==" => left == right,
-        "!=" => left != right,
-        ">"  => left >  right,
-        "<"  => left <  right,
-        "||"|"or"  => right.as_bool() || left.as_bool(),
-        "&&"|"and"  => right.as_bool() && left.as_bool(),
+fn binary_comparison(left: Type, operator: String, right: Type) -> Result<Type, String> {
+    match operator.as_ref() {
+        "==" => Ok(Type::Bool(left == right)),
+        "!=" => Ok(Type::Bool(left != right)),
+        ">"  => Ok(Type::Bool(left >  right)),
+        "<"  => Ok(Type::Bool(left <  right)),
+        "||"|"or"  => Ok(Type::Bool(right.as_bool() || left.as_bool())),
+        "&&"|"and" => Ok(Type::Bool(right.as_bool() && left.as_bool())),
         _ =>
-            panic!("Sintax error: invalid operation {:?}{:?}{:?}",
-                   right, operator, left)
-    };
-    Type::Bool(result)
+            Err(format!("Sintax error: invalid operation {:?}{:?}{:?}",
+                        right, operator, left))
+    }
 }
 
 fn truthy(condition: Type) -> bool {
-    binary_comparison(condition, String::from("=="), Type::Bool(true)).as_bool()
+    binary_comparison(condition, String::from("=="), Type::Bool(true)).unwrap().as_bool()
 }
 
 
