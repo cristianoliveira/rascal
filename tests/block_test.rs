@@ -117,7 +117,7 @@ mod blocks {
            end;
            return y
          end";
-        assert_eq!("Variable y doesn't exists in this context",
+        assert_eq!("Variable y doesn't exist in this context",
                    rascal::eval(String::from(source)));
     }
 
@@ -133,7 +133,7 @@ mod blocks {
            end;
            return x
         ";
-        assert_eq!("Variable z doesn't exists in this context",
+        assert_eq!("Variable z doesn't exist in this context",
                    rascal::eval(String::from(source)));
     }
 

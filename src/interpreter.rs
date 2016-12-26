@@ -202,7 +202,7 @@ impl Interpreter {
                 if let Some(value) = self.scope().get(&*name) {
                     Ok(value)
                 } else {
-                    Err(format!("Variable {} doesn't exists in this context", name))
+                    Err(format!("Variable {} doesn't exist in this context", name))
                 }
             },
 

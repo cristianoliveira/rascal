@@ -123,7 +123,7 @@ let mut y = 0;
 
 x == 4
 ```
-Error: "Variable x doesn't exists in this context"
+Error: "Variable x doesn't exist in this context"
 
 ### Functions
 ```rust
