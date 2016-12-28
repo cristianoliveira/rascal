@@ -1,5 +1,5 @@
 # Rascal [![Build Status](https://travis-ci.org/cristianoliveira/rascal.svg?branch=master)](https://travis-ci.org/cristianoliveira/rascal)
-A functional interpreted language made by Rust
+A (almost)functional interpreted language made by Rust
 
 ## Features of functional languages
 According with [Haskel wiki](https://wiki.haskell.org/Functional_programming) the features of a functional language are:
