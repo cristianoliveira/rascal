@@ -5,10 +5,10 @@ mod functions {
     #[test]
     fn it_eval_function_without_params() {
         let source =
-        "begin
-           fn add = [] { 2 + 2 };
+        "
+           let add = fn [] { 2 + 2 };
            add()
-         end";
+         ";
 
         let result = rascal::eval(String::from(source));
         assert_eq!("4", result);
@@ -17,10 +17,10 @@ mod functions {
     #[test]
     fn it_eval_function_with_params() {
         let source =
-        "begin
-           fn add = [x] { x + 2 };
+        "
+           let add = fn [x] { x + 2 };
            add(2)
-         end";
+         ";
 
         let result = rascal::eval(String::from(source));
         assert_eq!("4", result);
@@ -29,8 +29,8 @@ mod functions {
     #[test]
     fn it_eval_function_with_multiple_params() {
         let source =
-        "begin
-           fn add = [x,y,z] { x + y + z + 1 };
+        "
+           let add = fn [x,y,z] { x + y + z + 1 };
            add(2,2,2)
          end";
 
@@ -41,10 +41,10 @@ mod functions {
     #[test]
     fn it_eval_complex_function() {
         let source =
-        "begin
+        "
            var y = 0;
 
-           fn foo = [x] {
+           let foo = fn [x] {
              if x < 10 {
                 y = x + 1
              };
@@ -53,7 +53,7 @@ mod functions {
            };
 
            foo(6)
-         end";
+        ";
 
         let result = rascal::eval(String::from(source));
         assert_eq!("7", result);
@@ -62,8 +62,8 @@ mod functions {
     #[test]
     fn it_eval_recursive_functions() {
         let source =
-        "begin
-           fn foo = [x] {
+        "
+           let foo = fn [x] {
              if x < 10 {
                 x = x + 1;
                 foo(x)
@@ -73,7 +73,7 @@ mod functions {
            };
 
            foo(6)
-         end";
+        ";
 
         let result = rascal::eval(String::from(source));
         assert_eq!("10", result);
@@ -82,13 +82,13 @@ mod functions {
     #[test]
     fn it_eval_expressions_as_args() {
         let source =
-        "begin
-           fn foo = [x, y] {
+        "
+           let foo = fn [x, y] {
              return x + y
            };
 
            foo((8 + 1), (1 + 1))
-         end";
+        ";
 
         let result = rascal::eval(String::from(source));
         assert_eq!("11", result);
@@ -97,11 +97,11 @@ mod functions {
     #[test]
     fn it_eval_high_order_functions() {
         let source =
-        "begin
-           fn foo = [x] { x + 1 };
+        "
+           let foo = fn [x] { x + 1 };
            let other = foo;
            other(6)
-         end";
+        ";
 
         let result = rascal::eval(String::from(source));
         assert_eq!("7", result);
@@ -110,11 +110,11 @@ mod functions {
     #[test]
     fn it_accepts_function_as_params() {
         let source =
-        "begin
-           fn composed = [f] { f(10) };
-           fn foo = [x] { x + 1 };
+        "
+           let composed = fn [f] { f(10) };
+           let foo = fn [x] { x + 1 };
            composed(foo)
-         end";
+        ";
 
         let result = rascal::eval(String::from(source));
         assert_eq!("11", result);

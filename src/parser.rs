@@ -136,7 +136,6 @@ impl Parser {
                 ast::Node::print(self.expr())
             },
             Some(Token{ kind: Kind::ImmutableDefine, ..}) |
-            Some(Token{ kind: Kind::FunctionDefine, ..}) |
             Some(Token{ kind: Kind::MutableDefine, ..}) => {
                 self.define_statement()
             },
@@ -229,12 +228,28 @@ impl Parser {
             Some(Token{ kind: Kind::ImmutableDefine, ..}) => {
                 self.tokenizer.consume(Kind::ImmutableDefine);
                 self.tokenizer.advance();
-                let (var, _, expr) = (
-                    self.constant(),
-                    self.tokenizer.advance().consume(Kind::Assign),
-                    self.expr()
-                 );
-                ast::Node::define_immutable(var, expr)
+                let var = self.constant();
+                self.tokenizer.advance().consume(Kind::Assign);
+                println!("NEXT {:?}", self.tokenizer.advance().get());
+
+                match self.tokenizer.get() {
+                    Some(Token{ kind: Kind::FunctionDefine, ..}) => {
+                        self.tokenizer.consume(Kind::FunctionDefine);
+                        self.tokenizer.advance();
+
+                        self.tokenizer.advance().consume(Kind::FunctionParamBegin);
+                        let params = self.params_list();
+                        self.tokenizer.advance().consume(Kind::FunctionParamEnd);
+
+                        let block = self.block();
+
+                        ast::Node::define_function(var, params, block)
+                    },
+                    _ => {
+                        let expr = self.expr();
+                        ast::Node::define_immutable(var, expr)
+                    }
+                }
             },
             Some(Token{ kind: Kind::MutableDefine, ..}) => {
                 self.tokenizer.consume(Kind::MutableDefine);
@@ -245,21 +260,6 @@ impl Parser {
                     self.expr()
                  );
                 ast::Node::define_mutable(var, expr)
-            },
-            Some(Token{ kind: Kind::FunctionDefine, ..}) => {
-                self.tokenizer.consume(Kind::FunctionDefine);
-                self.tokenizer.advance();
-
-                let var = self.variable();
-                self.tokenizer.advance().consume(Kind::Assign);
-
-                self.tokenizer.advance().consume(Kind::FunctionParamBegin);
-                let params = self.params_list();
-                self.tokenizer.advance().consume(Kind::FunctionParamEnd);
-
-                let block = self.block();
-
-                ast::Node::define_function(var, params, block)
             },
             _ => ast::Node::empty()
         }
@@ -634,7 +634,7 @@ fn it_parses_expressions_gt_lt() {
 
 #[test]
 fn it_parses_function_define() {
-    let text = "{ fn x = [arg, arg2] { return arg + arg2 } }";
+    let text = "{ let x = fn [arg, arg2] { return arg + arg2 } }";
     let tokenizer = Tokenizer::new(String::from(text));
     let mut parser = Parser::new(tokenizer);
 
