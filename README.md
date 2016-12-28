@@ -47,7 +47,7 @@ rascal ./example.rl
   * Comparison: `==`,`!=`, `>`, `<`, `and` and `or`
   * If else: `if 1==1 { .. else .. }`
   * Loop: `while 1==1 { .. }`
-  * Function: `fn foo = [x] { x + 1 }`
+  * Function: `let foo = fn [x] { x + 1 }`
   * Print: `print (1+1)`
 
 ### Example
@@ -56,7 +56,7 @@ rascal ./example.rl
 var sum = 0;
 var number = 0;
 
-fn is_multiple = [x, y] { (x % y) == 0 };
+let is_multiple = fn [x, y] { (x % y) == 0 };
 
 while number < 10 {
   if is_multiple(number, 5) or is_multiple(number, 3) { sum = sum + number };
@@ -127,7 +127,7 @@ Error: "Variable x doesn't exist in this context"
 
 ### Functions
 ```rust
-fn foo = [x] { x + 1 };
+let foo = fn [x] { x + 1 };
 
 foo(10)
 ```
@@ -135,8 +135,8 @@ Result: 11
 
 ### High Order Functions
 ```rust
-fn composed = [f] { f(10) };
-fn foo = [x] { x + 1 };
+let composed = fn [f] { f(10) };
+let foo = fn [x] { x + 1 };
 
 composed(foo)
 ```
@@ -146,7 +146,7 @@ Result: 11
 ```rust
 var state = 0;
 
-fn mutstate = [x] { state = state + x };
+let mutstate = fn [x] { state = state + x };
 mutstate(10);
 mutstate(5);
 
