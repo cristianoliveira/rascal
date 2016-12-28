@@ -1,5 +1,5 @@
-let mut sum = 0;
-let mut number = 0;
+var sum = 0;
+var number = 0;
 
 fn is_multiple = [x, y] { (x % y) == 0 };
 

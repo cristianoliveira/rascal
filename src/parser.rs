@@ -226,6 +226,26 @@ impl Parser {
     // ```
     fn define_statement(&mut self) -> ast::Node {
         match self.tokenizer.get() {
+            Some(Token{ kind: Kind::ImmutableDefine, ..}) => {
+                self.tokenizer.consume(Kind::ImmutableDefine);
+                self.tokenizer.advance();
+                let (var, _, expr) = (
+                    self.constant(),
+                    self.tokenizer.advance().consume(Kind::Assign),
+                    self.expr()
+                 );
+                ast::Node::define_immutable(var, expr)
+            },
+            Some(Token{ kind: Kind::MutableDefine, ..}) => {
+                self.tokenizer.consume(Kind::MutableDefine);
+                self.tokenizer.advance();
+                let (var, _, expr) = (
+                    self.constant(),
+                    self.tokenizer.advance().consume(Kind::Assign),
+                    self.expr()
+                 );
+                ast::Node::define_mutable(var, expr)
+            },
             Some(Token{ kind: Kind::FunctionDefine, ..}) => {
                 self.tokenizer.consume(Kind::FunctionDefine);
                 self.tokenizer.advance();
@@ -241,30 +261,7 @@ impl Parser {
 
                 ast::Node::define_function(var, params, block)
             },
-            _ => {
-                self.tokenizer.consume(Kind::ImmutableDefine);
-                self.tokenizer.advance();
-
-                if let Some(Token{kind: Kind::MutableDefine,..}) = self.tokenizer.get() {
-                    self.tokenizer.consume(Kind::MutableDefine);
-                    self.tokenizer.advance();
-                    let (var, _, expr) = (
-                        self.variable(),
-                        self.tokenizer.advance().consume(Kind::Assign),
-                        self.expr()
-                    );
-
-                    ast::Node::define_mutable(var, expr)
-                } else {
-                    let (var, _, expr) = (
-                        self.constant(),
-                        self.tokenizer.advance().consume(Kind::Assign),
-                        self.expr()
-                        );
-
-                    ast::Node::define_immutable(var, expr)
-                }
-            }
+            _ => ast::Node::empty()
         }
     }
 
@@ -529,7 +526,7 @@ fn it_parses_respecting_parentesis_precedence() {
 
 #[test]
 fn it_parses_simple_block() {
-    let text = "begin let mut x = 10+5 end";
+    let text = "{ var x = 10+5 }";
     let tokenizer = Tokenizer::new(String::from(text));
     let mut parser = Parser::new(tokenizer);
 
@@ -560,7 +557,7 @@ fn it_parses_block_single_expression() {
 
 #[test]
 fn it_parses_multiple_statements() {
-    let text = "let mut x = 10+5; let y = 100";
+    let text = "var x = 10+5; let y = 100";
     let tokenizer = Tokenizer::new(String::from(text));
     let mut parser = Parser::new(tokenizer);
 

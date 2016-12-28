@@ -69,7 +69,7 @@ impl Kind {
             // Blocks Statements
             "fn" => Some(Kind::FunctionDefine),
             "let" | "imut" => Some(Kind::ImmutableDefine),
-            "mut" => Some(Kind::MutableDefine),
+            "var" => Some(Kind::MutableDefine),
             "=" => Some(Kind::Assign),
             "begin" | "{" => Some(Kind::Begin),
             "end" | "}" => Some(Kind::End),

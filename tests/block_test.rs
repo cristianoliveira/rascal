@@ -5,9 +5,9 @@ mod blocks {
     #[test]
     fn it_eval_retrieve_return_last_statement() {
         let source =
-        "begin
-           let mut x = 10;
-           let mut y = x + 5;
+        "
+           var x = 10;
+           var y = x + 5;
            return y + 5
          end";
 
@@ -31,7 +31,7 @@ mod blocks {
     fn it_eval_while_blocks() {
         let source =
         "begin
-           let mut y = 0;
+           var y = 0;
            while y < 4 begin
              y = y + 1
            end;
@@ -45,7 +45,7 @@ mod blocks {
     fn it_eval_if_blocks() {
         let source =
         "begin
-           let mut y = 0;
+           var y = 0;
            if y < 4 begin
              y = 4
            end;
@@ -59,7 +59,7 @@ mod blocks {
     fn it_eval_if_else_blocks() {
         let source =
         "begin
-           let mut y = 0;
+           var y = 0;
            if y > 4 begin
              y = 4
            else
@@ -87,7 +87,7 @@ mod blocks {
     fn it_accepts_mutable() {
         let source =
         "begin
-           let mut y = 0;
+           var y = 0;
            y = 1;
            return y
         end";
@@ -111,7 +111,7 @@ mod blocks {
     fn it_validates_block_context() {
         let source =
         "begin
-           let mut x = 0;
+           var x = 0;
            begin
              let y = 1
            end;
@@ -125,10 +125,10 @@ mod blocks {
     fn it_validates_nested_block_context() {
         let source =
         "
-           let mut x = 0;
+           var x = 0;
            begin
-             let mut y = x;
-             begin let mut z = 0 end;
+             var y = x;
+             begin var z = 0 end;
              x = z
            end;
            return x
@@ -141,9 +141,9 @@ mod blocks {
     fn it_has_nested_block_context() {
         let source =
         "
-           let mut x = 0;
+           var x = 0;
            begin
-             let mut x = 10;
+             var x = 10;
              x = 15
            end;
            return x
@@ -156,7 +156,7 @@ mod blocks {
     fn it_can_print_expression() {
         let source =
         "begin
-           let mut x = 0;
+           var x = 0;
            print (x)
          end";
         rascal::eval(String::from(source));

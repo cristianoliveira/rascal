@@ -42,7 +42,7 @@ mod functions {
     fn it_eval_complex_function() {
         let source =
         "begin
-           let mut y = 0;
+           var y = 0;
 
            fn foo = [x] {
              if x < 10 {
