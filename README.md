@@ -157,11 +157,9 @@ Result: 15
 ## Future implementations
   * Strings: support for strings
   * String comparison: support for compare strings
-  * Print: prints on stdout the given expression
   * Return: return in the middle of a block
   * Stable REPL: run code without exiting for sintax errors
   * Comments: ignore after `#`
-  * Lambda: support for short `x = |y| y + 1;`
 
 ## The Architecture
   It is a simple interpreded language that walks on an AST executing the program.
