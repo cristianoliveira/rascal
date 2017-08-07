@@ -49,10 +49,13 @@ rascal ./example.rl
   * Loop: `while 1==1 { .. }`
   * Function: `let foo = fn [x] { x + 1 }`
   * Print: `print (1+1)`
+  * Line Comments: `# this is a comment`
 
 ### Example
   First project euler challenge:
 ```rust
+# Sum a number only whether it's multiple of 5 or 3
+
 var sum = 0;
 var number = 0;
 
@@ -159,7 +162,6 @@ Result: 15
   * String comparison: support for compare strings
   * Return: return in the middle of a block
   * Stable REPL: run code without exiting for sintax errors
-  * Comments: ignore after `#`
 
 ## The Architecture
   It is a simple interpreded language that walks on an AST executing the program.

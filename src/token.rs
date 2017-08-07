@@ -33,6 +33,8 @@ pub enum Kind {
     Else,
 
     // Others
+    Comment,
+    EndLine,
     Separator,
     Space,
     EOF
@@ -51,7 +53,9 @@ impl Kind {
                     ')' => Kind::GroupEnd,
                     '[' => Kind::FunctionParamBegin,
                     ']' => Kind::FunctionParamEnd,
-                    ' '|'\n' => Kind::Space,
+                    ' ' => Kind::Space,
+                    '\n' => Kind::EndLine,
+                    '#' => Kind::Comment,
                     '+'|'-'|'*'|'/'|'%' => Kind::Operator,
                     '0'|'1'|'2'|'3'|'4'|
                     '5'|'6'|'7'|'8'|'9' => Kind::Integer,
@@ -85,6 +89,7 @@ impl Kind {
             "true"|"false" => Some(Kind::Bolean),
             "or"|"||"|"and"|"&&" => Some(Kind::Comparison),
             "=="|"!="|">"|"<" => Some(Kind::Comparison),
+
             _ => None
         }
     }
@@ -184,7 +189,15 @@ impl Iterator for Tokenizer {
         match kind {
             Kind::EOF => None,
 
-            Kind::Space => self.next(),
+            Kind::Space | Kind::EndLine => self.next(),
+
+            Kind::Comment => {
+                while Kind::EndLine != Kind::classify(&self.current()) {
+                    self.position +=1;
+                };
+
+                self.next()
+            },
 
             Kind::GroupBegin | Kind::GroupEnd | Kind::Operator =>
                 Some(Token::build(kind, format!("{}", current.unwrap()))),
@@ -202,10 +215,9 @@ impl Iterator for Tokenizer {
                 }
 
                 let word: String = chars.clone().into_iter().collect();
-                if let Some(reserved) = Kind::reserved(&word) {
-                    Some(Token{ kind: reserved, value: word })
-                } else {
-                    Some(Token{ kind: Kind::ID, value: word })
+                match Kind::reserved(&word) {
+                    Some(reserved) => Some(Token{ kind: reserved, value: word }),
+                    _ => Some(Token{ kind: Kind::ID, value: word })
                 }
             }
 
@@ -264,6 +276,17 @@ fn it_ignores_empty_spaces() {
     assert_eq!(
         tokens.next().unwrap(),
         Token { kind: Kind::Integer, value: String::from("1") }
+    );
+}
+
+#[test]
+fn it_ignores_a_comment() {
+    let text = "# foo \n 5";
+    let mut tokens = Tokenizer::new(String::from(text));
+
+    assert_eq!(
+        tokens.next().unwrap(),
+        Token { kind: Kind::Integer, value: String::from("5") }
     );
 }
 
