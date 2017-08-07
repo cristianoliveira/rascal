@@ -7,7 +7,7 @@ let plus_builder = fn[number] {
   let newfunc = fn[y] { plus(number, y) };
   newfunc
 };
-# This quite ugly but the currently don't allow anonymous functions :/
+# This quite ugly but the currently parser don't allow anonymous functions :/
 
 let double_of  = plus_builder(2);
 double_of(20)

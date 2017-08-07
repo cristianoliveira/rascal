@@ -96,8 +96,8 @@ var y = 0;
 
 if x != 2 {
   y = 13
-    else
-      y = 42
+else
+  y = 42
 };
 
 y == 42
@@ -151,11 +151,12 @@ let plus = fn[x, y] { x * y };
 let teen = fn[f, b] { f(10, b) };
 
 print(teen(plus, 5));
-// prints 50
+# prints 50
 
 let plus_builder = fn[number] {
   let func = fn[y] { plus(number, y) }; func
 };
+# This quite ugly but the currently parser don't allow anonymous functions :/
 
 let double  = plus_builder(2);
 double(20)
