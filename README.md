@@ -147,15 +147,21 @@ Result: 11
 
 ### Closures
 ```rust
-var state = 0;
+let plus = fn[x, y] { x * y };
+let teen = fn[f, b] { f(10, b) };
 
-let mutstate = fn [x] { state = state + x };
-mutstate(10);
-mutstate(5);
+print(teen(plus, 5));
+// prints 50
 
-state
+let plus_builder = fn[number] {
+  let func = fn[y] { plus(number, y) }; func
+};
+
+let double  = plus_builder(2);
+double(20)
+
 ```
-Result: 15
+Result: 40
 
 ## Future implementations
   * Strings: support for strings

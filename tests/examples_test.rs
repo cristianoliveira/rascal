@@ -17,4 +17,10 @@ mod examples {
         let source = load_file("./examples/projecteuler1.rl");
         assert_eq!("23", rascal::eval(String::from(source)));
     }
+
+    #[test]
+    fn first_class_functions_and_closure() {
+        let source = load_file("./examples/firstclassfunc.rl");
+        assert_eq!("40", rascal::eval(String::from(source)));
+    }
 }
